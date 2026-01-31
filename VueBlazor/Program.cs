@@ -1,13 +1,20 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using VueBlazor.Data;
+using Model.Services;
+using ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
+
+// Register Services
+builder.Services.AddSingleton<IWeatherForecastService, WeatherForecastService>();
+
+// Register ViewModels
+builder.Services.AddTransient<CounterViewModel>();
+builder.Services.AddTransient<WeatherForecastViewModel>();
 
 var app = builder.Build();
 

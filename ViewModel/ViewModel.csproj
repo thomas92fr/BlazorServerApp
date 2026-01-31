@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Model\Model.csproj" />
-    <ProjectReference Include="..\VueBlazor\VueBlazor.csproj" />
   </ItemGroup>
 
 </Project>

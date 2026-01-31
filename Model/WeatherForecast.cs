@@ -1,4 +1,4 @@
-namespace VueBlazor.Data
+namespace Model
 {
     public class WeatherForecast
     {

@@ -1,6 +1,6 @@
-namespace VueBlazor.Data
+namespace Model.Services
 {
-    public class WeatherForecastService
+    public class WeatherForecastService : IWeatherForecastService
     {
         private static readonly string[] Summaries = new[]
         {
