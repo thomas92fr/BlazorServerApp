@@ -1,7 +1,7 @@
 using FluentValidation;
-using Infrastructure.Factory;
-using Infrastructure.Repository;
-using Infrastructure.ViewModel;
+using Model.Factory;
+using Model.Repository;
+using Model.ViewModel;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
 using ViewModel.Commons.Bases;

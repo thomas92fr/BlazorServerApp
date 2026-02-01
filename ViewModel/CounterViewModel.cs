@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
-using Infrastructure.Repository;
+using Model.Repository;
 using Microsoft.Extensions.Logging;
 using ViewModel.Commons.Bases;
 using ViewModel.Fields;

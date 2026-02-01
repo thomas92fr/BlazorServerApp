@@ -1,8 +1,8 @@
-using Infrastructure.Repository;
-using Infrastructure.ViewModel;
+using Model.Repository;
+using Model.ViewModel;
 using Model.Entities;
 
-namespace Infrastructure.Factory;
+namespace Model.Factory;
 
 /// <summary>
 /// Factory interface for creating ViewModels from entities.

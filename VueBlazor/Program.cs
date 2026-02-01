@@ -1,4 +1,4 @@
-using Infrastructure.Repository;
+using Model.Repository;
 using Model.Services;
 using ViewModel;
 

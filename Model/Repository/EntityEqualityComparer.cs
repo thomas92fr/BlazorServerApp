@@ -1,6 +1,6 @@
 using Model.Entities;
 
-namespace Infrastructure.Repository;
+namespace Model.Repository;
 
 /// <summary>
 /// Comparator for entities in cache.

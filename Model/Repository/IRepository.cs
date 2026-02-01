@@ -1,7 +1,7 @@
-using Infrastructure.ViewModel;
+using Model.ViewModel;
 using Model.Entities;
 
-namespace Infrastructure.Repository;
+namespace Model.Repository;
 
 /// <summary>
 /// Generic repository interface for data access and ViewModel caching.
