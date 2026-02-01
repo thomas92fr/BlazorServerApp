@@ -1,4 +1,4 @@
-namespace Model.ViewModel;
+namespace Model.ViewModels;
 
 /// <summary>
 /// Represents a validation error from SaveAll().

@@ -1,12 +1,11 @@
 using FluentValidation;
-using Model.Factory;
-using Model.Repository;
-using Model.ViewModel;
+using Model.Factories;
+using Model.Repositories;
+using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
 using ViewModel.Commons.Bases;
 using ViewModel.Commons.Fields;
-using ViewModel.Fields;
 
 namespace ViewModel.Persons;
 

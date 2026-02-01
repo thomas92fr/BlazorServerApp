@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
-using Model.ViewModel;
+using Model.ViewModels;
 using Model.Entities;
 
 namespace ViewModel.Commons.Fields;

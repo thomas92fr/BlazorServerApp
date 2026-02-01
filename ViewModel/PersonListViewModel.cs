@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Model.Repository;
-using Model.ViewModel;
+using Model.Repositories;
+using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
 using ViewModel.Commons.Bases;

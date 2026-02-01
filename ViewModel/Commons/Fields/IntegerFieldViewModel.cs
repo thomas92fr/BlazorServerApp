@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using ViewModel.Commons.Fields;
 
-namespace ViewModel.Fields;
+namespace ViewModel.Commons.Fields;
 
 /// <summary>
 /// FieldViewModel specialized for integer properties.

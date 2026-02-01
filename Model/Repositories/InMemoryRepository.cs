@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using Model.Factory;
-using Model.ViewModel;
+using Model.Factories;
+using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
 
-namespace Model.Repository;
+namespace Model.Repositories;
 
 /// <summary>
 /// In-memory repository implementation with ViewModel caching.

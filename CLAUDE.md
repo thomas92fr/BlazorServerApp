@@ -30,8 +30,9 @@ BlazorServerApp.slnx (Solution)
 │   ├── Shared/         # Layout and shared components
 │   └── Components/     # Reusable components
 │       ├── Base/       # ViewModelComponentBase
-│       ├── Person/     # PersonView
-│       └── ViewModels/FieldViews/  # StringFieldView, IntegerFieldView, etc.
+│       ├── Persons/    # PersonView
+│       └── Commons/
+│           └── Fields/  # StringFieldView, IntegerFieldView, etc.
 │
 ├── ViewModel/          # ViewModels with CommunityToolkit.Mvvm - VIEWMODEL
 │   ├── CounterViewModel.cs
@@ -45,9 +46,9 @@ BlazorServerApp.slnx (Solution)
 └── Model/              # Domain models, services, business logic, and infrastructure - MODEL
     ├── Entities/       # IEntity, Person
     ├── Services/       # IWeatherForecastService, WeatherForecastService
-    ├── Repository/     # IRepository, InMemoryRepository, EntityEqualityComparer
-    ├── Factory/        # IEntityViewModelFactory
-    └── ViewModel/      # IViewModel, IEntityViewModel, IFieldViewModel, ValidationError
+    ├── Repositories/   # IRepository, InMemoryRepository, EntityEqualityComparer
+    ├── Factories/      # IEntityViewModelFactory
+    └── ViewModels/     # IViewModel, IEntityViewModel, IFieldViewModel, ValidationError
 ```
 
 **Blazor Server Model:** Uses server-side rendering with real-time WebSocket communication (SignalR). Components execute on the server, and UI updates are sent to the browser over a persistent connection.
@@ -132,7 +133,7 @@ The **user interface layer** with Blazor Server:
 
 ### Repository Pattern (Blazor-specific)
 - `IRepository` registered as **Scoped** (one instance per user circuit, not Singleton)
-  - Located in `Model/Repository/IRepository.cs:10`
+  - Located in `Model/Repositories/IRepository.cs:10`
 - Caches ViewModels and manages Entity ↔ ViewModel mapping
 - Change tracking: `MarkAsModified()`, `SaveAll()`, `HasChanges()`, `DiscardChanges()`
 - Factory discovery: Automatically finds `IEntityViewModelFactory<,>` implementations via reflection
@@ -155,7 +156,7 @@ The **user interface layer** with Blazor Server:
   - Calls `MarkAsModified()` on value change
 - Typed variants: `StringFieldViewModel`, `IntegerFieldViewModel`, `BoolFieldViewModel`, `DateTimeFieldViewModel`
 - Located in `ViewModel/Commons/Fields/`
-- Corresponding Blazor views in `VueBlazor/Components/ViewModels/FieldViews/`
+- Corresponding Blazor views in `VueBlazor/Components/Commons/Fields/`
 
 ### ViewModelComponentBase Pattern (CRITICAL for Blazor)
 - Base class for Blazor components using ViewModels
@@ -177,7 +178,7 @@ The **user interface layer** with Blazor Server:
 
 **Required using statements:**
 ```csharp
-using Model.Repository;        // IRepository, InMemoryRepository
+using Model.Repositories;      // IRepository, InMemoryRepository
 using Model.Services;          // IWeatherForecastService, WeatherForecastService
 using ViewModel;               // ViewModels
 ```
@@ -277,9 +278,9 @@ This application adapts MVVM patterns for Blazor Server. Key differences from WP
 **Model Project:**
 - `Model.Entities` - Domain entities (IEntity, Person, WeatherForecast)
 - `Model.Services` - Business services (IWeatherForecastService, WeatherForecastService)
-- `Model.Repository` - Data access abstractions (IRepository, InMemoryRepository, EntityEqualityComparer)
-- `Model.Factory` - Factory pattern (IEntityViewModelFactory<,>)
-- `Model.ViewModel` - ViewModel interfaces (IViewModel, IEntityViewModel<>, IFieldViewModel, ValidationError)
+- `Model.Repositories` - Data access abstractions (IRepository, InMemoryRepository, EntityEqualityComparer)
+- `Model.Factories` - Factory pattern (IEntityViewModelFactory<,>)
+- `Model.ViewModels` - ViewModel interfaces (IViewModel, IEntityViewModel<>, IFieldViewModel, ValidationError)
 
 **ViewModel Project:**
 - `ViewModel` - Root ViewModels (CounterViewModel, WeatherForecastViewModel, PersonListViewModel)
@@ -289,8 +290,8 @@ This application adapts MVVM patterns for Blazor Server. Key differences from WP
 
 **VueBlazor Project:**
 - `VueBlazor.Components.Base` - Base components (ViewModelComponentBase<T>)
-- `VueBlazor.Components.ViewModels.FieldViews` - Field view components (StringFieldView, IntegerFieldView, etc.)
-- `VueBlazor.Components.Person` - Entity-specific views (PersonView)
+- `VueBlazor.Components.Commons.Fields` - Field view components (StringFieldView, IntegerFieldView, etc.)
+- `VueBlazor.Components.Persons` - Entity-specific views (PersonView)
 - `VueBlazor.Pages` - Routable pages (Counter, Weather, PersonList)
 - `VueBlazor.Shared` - Shared layout components (MainLayout, NavMenu)
 
@@ -299,9 +300,9 @@ This application adapts MVVM patterns for Blazor Server. Key differences from WP
 **In ViewModels (.cs files):**
 ```csharp
 using Model.Entities;           // For entity types
-using Model.Repository;         // For IRepository
-using Model.ViewModel;          // For IViewModel, IEntityViewModel<>, ValidationError
-using Model.Factory;            // For IEntityViewModelFactory<,> (in factories)
+using Model.Repositories;       // For IRepository
+using Model.ViewModels;         // For IViewModel, IEntityViewModel<>, ValidationError
+using Model.Factories;          // For IEntityViewModelFactory<,> (in factories)
 using ViewModel.Commons.Bases;  // For BaseViewModel
 using ViewModel.Commons.Fields; // For FieldViewModel<T>
 using CommunityToolkit.Mvvm.ComponentModel;  // For [ObservableProperty]
@@ -311,12 +312,12 @@ using FluentValidation;         // For validation rules
 
 **In Razor components (.razor files):**
 ```razor
-@using Model.Repository
-@using Model.ViewModel
+@using Model.Repositories
+@using Model.ViewModels
 @using ViewModel
 @using ViewModel.Persons
 @using VueBlazor.Components.Base
-@using VueBlazor.Components.ViewModels.FieldViews
+@using VueBlazor.Components.Commons.Fields
 ```
 
 **Note:** Most common using statements are in `_Imports.razor` for global availability.

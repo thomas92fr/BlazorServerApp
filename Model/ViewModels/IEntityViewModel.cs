@@ -1,7 +1,7 @@
-using Model.Repository;
+using Model.Repositories;
 using Model.Entities;
 
-namespace Model.ViewModel;
+namespace Model.ViewModels;
 
 /// <summary>
 /// Interface for ViewModels bound to entities.

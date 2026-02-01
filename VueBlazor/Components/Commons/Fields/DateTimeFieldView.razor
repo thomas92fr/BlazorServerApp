@@ -1,5 +1,4 @@
 @using ViewModel.Commons.Fields
-@using ViewModel.Fields
 
 <div class="mb-3">
     @if (!string.IsNullOrEmpty(Field?.Label))
@@ -7,10 +6,10 @@
         <label class="form-label">@Field.Label</label>
     }
 
-    <input type="text"
+    <input type="datetime-local"
            class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-           value="@Field?.Value"
-           @oninput="OnValueChanged"
+           value="@GetDateTimeLocalValue()"
+           @onchange="OnValueChanged"
            disabled="@(Field?.ReadOnly ?? false)" />
 
     @if (!string.IsNullOrEmpty(Field?.Error))
@@ -35,19 +34,25 @@
 
 @code {
     [Parameter]
-    public StringFieldViewModel? Field { get; set; }
+    public DateTimeFieldViewModel? Field { get; set; }
 
     [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+    public EventCallback<DateTime> ValueChanged { get; set; }
+
+    private string GetDateTimeLocalValue()
+    {
+        // datetime-local input expects format: yyyy-MM-ddTHH:mm
+        return Field?.Value.ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
+    }
 
     private async Task OnValueChanged(ChangeEventArgs e)
     {
-        var newValue = e.Value?.ToString() ?? string.Empty;
+        var value = e.Value?.ToString();
 
-        if (Field != null)
+        if (!string.IsNullOrWhiteSpace(value) && DateTime.TryParse(value, out var dateTime) && Field != null)
         {
-            Field.Value = newValue;
-            await ValueChanged.InvokeAsync(newValue);
+            Field.Value = dateTime;
+            await ValueChanged.InvokeAsync(dateTime);
         }
     }
 }

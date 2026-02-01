@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
-using Model.Repository;
+using Model.Repositories;
 using Microsoft.Extensions.Logging;
 using Model;
 using Model.Services;

@@ -1,6 +1,6 @@
-using Model.Repository;
+using Model.Repositories;
 
-namespace Model.ViewModel;
+namespace Model.ViewModels;
 
 /// <summary>
 /// Base interface for all ViewModels.

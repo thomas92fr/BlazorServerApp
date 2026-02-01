@@ -1,4 +1,4 @@
-namespace Model.ViewModel;
+namespace Model.ViewModels;
 
 /// <summary>
 /// Interface for field-level ViewModels (properties with metadata).
