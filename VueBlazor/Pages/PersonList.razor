@@ -1,0 +1,81 @@
+@page "/persons"
+@using VueBlazor.Components.Person
+@using Infrastructure.ViewModel
+@inject PersonListViewModel ViewModel
+
+<PageTitle>Person Management</PageTitle>
+
+<h1>Person Management</h1>
+
+<div class="mb-3">
+    <button class="btn btn-success" @onclick="ViewModel.AddPersonCommand.Execute">
+        Add Person
+    </button>
+    <button class="btn btn-primary" @onclick="ViewModel.SaveAllCommand.Execute">
+        Save All
+    </button>
+    <button class="btn btn-warning" @onclick="ViewModel.DiscardChangesCommand.Execute" disabled="@(!ViewModel.HasChanges)">
+        Discard Changes
+    </button>
+</div>
+
+@if (ViewModel.ValidationErrors != null && ViewModel.ValidationErrors.Any())
+{
+    <div class="alert alert-danger">
+        <h5>Validation Errors:</h5>
+        <ul>
+            @foreach (var error in ViewModel.ValidationErrors)
+            {
+                <li>@error.PropertyName: @error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(ViewModel.SaveSuccessMessage))
+{
+    <div class="alert alert-success">
+        @ViewModel.SaveSuccessMessage
+    </div>
+}
+
+<div class="row">
+    <div class="col-md-4">
+        <h4>Person List</h4>
+        <div class="list-group">
+            @foreach (var person in ViewModel.Persons)
+            {
+                <a href="#"
+                   class="list-group-item list-group-item-action @(person == ViewModel.SelectedPerson ? "active" : "")"
+                   @onclick="() => ViewModel.SelectPersonCommand.Execute(person)"
+                   @onclick:preventDefault>
+                    @person.Name.Value (@person.Id.Value)
+                </a>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        @if (ViewModel.SelectedPerson != null)
+        {
+            <PersonView ViewModel="@ViewModel.SelectedPerson" />
+
+            <div class="mt-3">
+                <button class="btn btn-danger" @onclick="ViewModel.DeleteSelectedPersonCommand.Execute">
+                    Delete Person
+                </button>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">Select a person to view details</p>
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ViewModel.Initialize();
+    }
+}

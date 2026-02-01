@@ -1,0 +1,32 @@
+@using ViewModel.Persons
+@using VueBlazor.Components.ViewModels.FieldViews
+
+<div class="card">
+    <div class="card-header">
+        <h5>Person Details</h5>
+    </div>
+    <div class="card-body">
+        <!-- Id (Read-only) -->
+        <IntegerFieldView Field="@ViewModel?.Id" />
+
+        <!-- Name with validation -->
+        <StringFieldView Field="@ViewModel?.Name" />
+
+        <!-- Age with increment/decrement -->
+        <IntegerFieldView Field="@ViewModel?.Age" />
+
+        <!-- IsTeacher checkbox -->
+        <BoolFieldView Field="@ViewModel?.IsTeacher" />
+
+        <!-- Start DateTime -->
+        <DateTimeFieldView Field="@ViewModel?.StartDateTime" />
+
+        <!-- End DateTime -->
+        <DateTimeFieldView Field="@ViewModel?.EndDateTime" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public PersonViewModel? ViewModel { get; set; }
+}

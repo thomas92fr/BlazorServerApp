@@ -1,29 +1,64 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Infrastructure.Repository;
+using Microsoft.Extensions.Logging;
 using Model;
 using Model.Services;
+using ViewModel.Bases;
 
-namespace ViewModel
+namespace ViewModel;
+
+/// <summary>
+/// Weather Forecast ViewModel using Repository pattern.
+///
+/// BLAZOR MIGRATION NOTES:
+/// - Now inherits from BaseViewModel
+/// - Uses Repository for entity caching (when EF Core added)
+/// - Demonstrates loading data into Repository
+/// - IsBusy property from BaseViewModel for loading indicators
+/// </summary>
+public partial class WeatherForecastViewModel : BaseViewModel
 {
-    public partial class WeatherForecastViewModel : ObservableObject
+    private readonly IWeatherForecastService _forecastService;
+    private List<WeatherForecast>? _forecasts;
+
+    public WeatherForecastViewModel(
+        IRepository repository,
+        IWeatherForecastService forecastService,
+        ILogger<WeatherForecastViewModel>? logger = null
+    ) : base(repository, logger)
     {
-        private readonly IWeatherForecastService _forecastService;
+        _forecastService = forecastService;
+    }
 
-        [ObservableProperty]
-        private WeatherForecast[]? forecasts;
+    /// <summary>
+    /// All loaded weather forecasts.
+    /// BLAZOR BINDING: @foreach (var forecast in ViewModel.Forecasts)
+    /// </summary>
+    public IEnumerable<WeatherForecast>? Forecasts => _forecasts;
 
-        [ObservableProperty]
-        private bool isLoading;
-
-        public WeatherForecastViewModel(IWeatherForecastService forecastService)
+    /// <summary>
+    /// Loads weather forecasts from service.
+    /// BLAZOR LIFECYCLE: Call in OnInitializedAsync()
+    /// </summary>
+    [RelayCommand]
+    private async Task LoadForecasts()
+    {
+        await ExecuteAsync(async () =>
         {
-            _forecastService = forecastService;
-        }
+            Log?.LogInformation("Loading weather forecasts...");
+            var forecasts = await _forecastService.GetForecastAsync(DateTime.Now);
 
-        public async Task LoadForecastsAsync()
-        {
-            IsLoading = true;
-            Forecasts = await _forecastService.GetForecastAsync(DateTime.Now);
-            IsLoading = false;
-        }
+            _forecasts = forecasts.ToList();
+
+            // Assign IDs for entity tracking
+            int id = 1;
+            foreach (var forecast in _forecasts)
+            {
+                forecast.Id = id++;
+            }
+
+            OnPropertyChanged(nameof(Forecasts));
+            Log?.LogInformation("Loaded {Count} forecasts", _forecasts.Count);
+        });
     }
 }

@@ -1,15 +1,45 @@
 ﻿@page "/counter"
 @using ViewModel
+@using VueBlazor.Components.ViewModels.FieldViews
 @inject CounterViewModel ViewModel
 
 <PageTitle>Counter</PageTitle>
 
 <h1>Counter</h1>
 
-<p role="status">Current count: @ViewModel.CurrentCount</p>
+<p role="status">
+    <strong>@ViewModel.CurrentCount.Label:</strong> @ViewModel.CurrentCount.Value
+</p>
 
-<button class="btn btn-primary" @onclick="ViewModel.IncrementCountCommand.Execute">Click me</button>
+<!-- Method 1: Using Field View Component -->
+<IntegerFieldView Field="@ViewModel.CurrentCount" />
+
+<!-- Method 2: Manual binding (alternative demo) -->
+<div class="mb-3">
+    <label>@ViewModel.CurrentCount.Label (Manual Binding)</label>
+    <input type="number"
+           class="form-control @(!string.IsNullOrEmpty(ViewModel.CurrentCount.Error) ? "is-invalid" : "")"
+           value="@ViewModel.CurrentCount.Value"
+           @oninput="@(e => ViewModel.CurrentCount.Value = int.Parse(e.Value?.ToString() ?? "0"))" />
+
+    @if (!string.IsNullOrEmpty(ViewModel.CurrentCount.Error))
+    {
+        <div class="text-danger">@ViewModel.CurrentCount.Error</div>
+    }
+    @if (!string.IsNullOrEmpty(ViewModel.CurrentCount.Warning))
+    {
+        <div class="text-warning">⚠️ @ViewModel.CurrentCount.Warning</div>
+    }
+</div>
+
+<button class="btn btn-primary" @onclick="ViewModel.IncrementCountCommand.Execute">
+    Increment Count
+</button>
+
+<button class="btn btn-secondary ms-2" @onclick="ViewModel.ResetCountCommand.Execute">
+    Reset
+</button>
 
 @code {
-    // Le ViewModel est injecté et gère toute la logique
+    // ViewModel injected via DI - no initialization needed in Blazor!
 }

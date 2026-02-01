@@ -1,0 +1,59 @@
+@using ViewModel.Fields
+
+<div class="mb-3 form-check">
+    <input type="checkbox"
+           class="form-check-input @(Field?.Error != null ? "is-invalid" : "")"
+           id="@GetUniqueId()"
+           checked="@(Field?.Value ?? false)"
+           @onchange="OnValueChanged"
+           disabled="@(Field?.ReadOnly ?? false)" />
+
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <label class="form-check-label" for="@GetUniqueId()">
+            @Field.Label
+        </label>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <div class="invalid-feedback d-block">
+            @Field.Error
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <div class="text-warning">
+            ⚠️ @Field.Warning
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <small class="form-text text-muted d-block">@Field.Hint</small>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public BoolFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    private string _uniqueId = Guid.NewGuid().ToString();
+
+    private string GetUniqueId() => _uniqueId;
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        var newValue = e.Value is bool boolValue ? boolValue : false;
+
+        if (Field != null)
+        {
+            Field.Value = newValue;
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+}

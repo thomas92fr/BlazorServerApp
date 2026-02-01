@@ -1,0 +1,71 @@
+@using ViewModel.Fields
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <label class="form-label">@Field.Label</label>
+    }
+
+    <div class="input-group">
+        <input type="number"
+               class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+               value="@Field?.Value"
+               @oninput="OnValueChanged"
+               disabled="@(Field?.ReadOnly ?? false)" />
+
+        <button class="btn btn-outline-secondary"
+                type="button"
+                @onclick="DecrementValue"
+                disabled="@(Field?.ReadOnly ?? false)">
+            -
+        </button>
+        <button class="btn btn-outline-secondary"
+                type="button"
+                @onclick="IncrementValue"
+                disabled="@(Field?.ReadOnly ?? false)">
+            +
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <div class="text-danger">
+            @Field.Error
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <div class="text-warning">
+            ⚠️ @Field.Warning
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <small class="form-text text-muted">@Field.Hint</small>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IntegerFieldViewModel? Field { get; set; }
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value) && Field != null)
+        {
+            Field.Value = value;
+        }
+    }
+
+    private void IncrementValue()
+    {
+        Field?.IncrementCommand.Execute(null);
+    }
+
+    private void DecrementValue()
+    {
+        Field?.DecrementCommand.Execute(null);
+    }
+}

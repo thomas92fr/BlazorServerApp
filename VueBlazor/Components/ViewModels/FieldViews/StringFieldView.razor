@@ -1,0 +1,52 @@
+@using ViewModel.Fields
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <label class="form-label">@Field.Label</label>
+    }
+
+    <input type="text"
+           class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+           value="@Field?.Value"
+           @oninput="OnValueChanged"
+           disabled="@(Field?.ReadOnly ?? false)" />
+
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <div class="invalid-feedback d-block">
+            @Field.Error
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <div class="text-warning">
+            ⚠️ @Field.Warning
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <small class="form-text text-muted">@Field.Hint</small>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public StringFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private async Task OnValueChanged(ChangeEventArgs e)
+    {
+        var newValue = e.Value?.ToString() ?? string.Empty;
+
+        if (Field != null)
+        {
+            Field.Value = newValue;
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+}

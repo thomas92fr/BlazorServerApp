@@ -1,5 +1,6 @@
 ﻿@page "/fetchdata"
 @using ViewModel
+@using Model
 @inject WeatherForecastViewModel ViewModel
 
 <PageTitle>Weather forecast</PageTitle>
@@ -8,19 +9,26 @@
 
 <p>This component demonstrates fetching data from a service.</p>
 
-@if (ViewModel.IsLoading)
+<button class="btn btn-primary mb-3"
+        @onclick="ViewModel.LoadForecastsCommand.Execute"
+        disabled="@ViewModel.IsBusy">
+    @(ViewModel.IsBusy ? "Loading..." : "Load Forecasts")
+</button>
+
+@if (ViewModel.IsBusy)
 {
     <p><em>Loading...</em></p>
 }
 else if (ViewModel.Forecasts == null)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Click "Load Forecasts" to fetch data.</em></p>
 }
 else
 {
     <table class="table">
         <thead>
             <tr>
+                <th>Id</th>
                 <th>Date</th>
                 <th>Temp. (C)</th>
                 <th>Temp. (F)</th>
@@ -31,6 +39,7 @@ else
             @foreach (var forecast in ViewModel.Forecasts)
             {
                 <tr>
+                    <td>@forecast.Id</td>
                     <td>@forecast.Date.ToShortDateString()</td>
                     <td>@forecast.TemperatureC</td>
                     <td>@forecast.TemperatureF</td>
@@ -44,6 +53,7 @@ else
 @code {
     protected override async Task OnInitializedAsync()
     {
-        await ViewModel.LoadForecastsAsync();
+        // Auto-load on page initialization
+        await ViewModel.LoadForecastsCommand.ExecuteAsync(null);
     }
 }

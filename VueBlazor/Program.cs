@@ -1,20 +1,28 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
+using Infrastructure.Repository;
 using Model.Services;
 using ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-// Register Services
+// BLAZOR KEY: Repository is Scoped (per user circuit), not Singleton
+// Each user connection gets their own Repository instance with isolated cache
+builder.Services.AddScoped<IRepository, InMemoryRepository>();
+
+// Register services
 builder.Services.AddSingleton<IWeatherForecastService, WeatherForecastService>();
 
-// Register ViewModels
-builder.Services.AddTransient<CounterViewModel>();
-builder.Services.AddTransient<WeatherForecastViewModel>();
+// Register ViewModels as Scoped (shared per circuit, not per component)
+// MIGRATION NOTE: Previously were Transient, now Scoped matches Repository lifetime
+builder.Services.AddScoped<CounterViewModel>();
+builder.Services.AddScoped<WeatherForecastViewModel>();
+builder.Services.AddScoped<PersonListViewModel>();
+
+// Logging
+builder.Services.AddLogging();
 
 var app = builder.Build();
 
