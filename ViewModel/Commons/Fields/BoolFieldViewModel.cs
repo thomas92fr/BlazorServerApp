@@ -1,4 +1,4 @@
-namespace ViewModel.Fields;
+namespace ViewModel.Commons.Fields;
 
 /// <summary>
 /// FieldViewModel specialized for boolean properties.

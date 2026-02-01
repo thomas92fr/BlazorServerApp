@@ -3,7 +3,7 @@ using Infrastructure.Repository;
 using Microsoft.Extensions.Logging;
 using Model;
 using Model.Services;
-using ViewModel.Bases;
+using ViewModel.Commons.Bases;
 
 namespace ViewModel;
 

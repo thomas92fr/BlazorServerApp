@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using Infrastructure.Repository;
 using Microsoft.Extensions.Logging;
-using ViewModel.Bases;
+using ViewModel.Commons.Bases;
 using ViewModel.Fields;
 
 namespace ViewModel;

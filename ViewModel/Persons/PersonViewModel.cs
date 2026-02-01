@@ -1,11 +1,27 @@
 using FluentValidation;
+using Infrastructure.Factory;
 using Infrastructure.Repository;
 using Infrastructure.ViewModel;
 using Microsoft.Extensions.Logging;
-using ViewModel.Bases;
+using Model.Entities;
+using ViewModel.Commons.Bases;
+using ViewModel.Commons.Fields;
 using ViewModel.Fields;
 
 namespace ViewModel.Persons;
+
+/// <summary>
+/// Factory for creating PersonViewModel instances.
+/// CONVENTION: Must be named {EntityName}ViewModelFactory in same namespace as ViewModel.
+/// </summary>
+public class PersonViewModelFactory : IEntityViewModelFactory<Person, PersonViewModel>
+{
+    public PersonViewModel Create(Person entity, IRepository repository)
+    {
+        return new PersonViewModel(entity, repository);
+    }
+}
+
 
 /// <summary>
 /// ViewModel for Person entity.

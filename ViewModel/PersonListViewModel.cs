@@ -4,7 +4,7 @@ using Infrastructure.Repository;
 using Infrastructure.ViewModel;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
-using ViewModel.Bases;
+using ViewModel.Commons.Bases;
 using ViewModel.Persons;
 
 namespace ViewModel;

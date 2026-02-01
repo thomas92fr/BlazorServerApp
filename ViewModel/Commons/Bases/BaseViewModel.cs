@@ -3,7 +3,7 @@ using Infrastructure.Repository;
 using Infrastructure.ViewModel;
 using Microsoft.Extensions.Logging;
 
-namespace ViewModel.Bases;
+namespace ViewModel.Commons.Bases;
 
 /// <summary>
 /// Base class for all ViewModels.

@@ -3,7 +3,7 @@ using FluentValidation;
 using Infrastructure.ViewModel;
 using Model.Entities;
 
-namespace ViewModel.Fields;
+namespace ViewModel.Commons.Fields;
 
 /// <summary>
 /// Generic property wrapper with validation, lazy loading, and UI metadata.
