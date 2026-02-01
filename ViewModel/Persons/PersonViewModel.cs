@@ -95,6 +95,15 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     };
 
     /// <summary>
+    /// Custom validation method for Name field.
+    /// </summary>
+    private bool BeAValidName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return true;
+        return name.All(c => char.IsLetter(c) || c == ' ' || c == '-');
+    }
+
+    /// <summary>
     /// Age property with Error and Warning validations.
     /// </summary>
     public IntegerFieldViewModel Age => _ageField ??= new IntegerFieldViewModel(
@@ -151,15 +160,6 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
         Label = "End Date",
         Hint = "End date and time"
     };
-
-    /// <summary>
-    /// Custom validation method for Name field.
-    /// </summary>
-    private bool BeAValidName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return true;
-        return name.All(c => char.IsLetter(c) || c == ' ' || c == '-');
-    }
 
     public override string ToString() => $"Person: {Id.Value}, {Name.Value}";
 }
