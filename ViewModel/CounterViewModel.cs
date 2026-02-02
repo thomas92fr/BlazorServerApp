@@ -1,4 +1,3 @@
-using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using Model.Repositories;
 using Microsoft.Extensions.Logging;
@@ -14,16 +13,43 @@ namespace ViewModel;
 /// - CurrentCount is now IntegerFieldViewModel (was simple int property)
 /// - Validation added: count cannot be negative or exceed 1000
 /// - Demonstrates how to migrate simple ViewModels to advanced pattern
+/// - Commands now use CommandViewModel pattern for consistent UI binding
 /// </summary>
 public partial class CounterViewModel : BaseViewModel
 {
     private IntegerFieldViewModel? _currentCountField;
+    private int _currentCountValue = 0; // Store the actual counter value
+
+    /// <summary>
+    /// Command to increment the counter.
+    /// </summary>
+    public CommandViewModel IncrementCountCommand { get; }
+
+    /// <summary>
+    /// Command to reset the counter to zero.
+    /// </summary>
+    public CommandViewModel ResetCountCommand { get; }
 
     public CounterViewModel(
         IRepository repository,
         ILogger<CounterViewModel>? logger = null
     ) : base(repository, logger)
     {
+        IncrementCountCommand = new CommandViewModel(
+            parent: this,
+            text: "Click me",
+            hint: "Increment the counter by 1",
+            execute: IncrementCount,
+            style: CommandStyle.Primary
+        );
+
+        ResetCountCommand = new CommandViewModel(
+            parent: this,
+            text: "Reset",
+            hint: "Reset the counter to zero",
+            execute: ResetCount,
+            style: CommandStyle.Default
+        );
     }
 
     /// <summary>
@@ -34,8 +60,8 @@ public partial class CounterViewModel : BaseViewModel
     /// </summary>
     public IntegerFieldViewModel CurrentCount => _currentCountField ??= new IntegerFieldViewModel(
         parent: this,
-        getValue: () => 0, // Initial value
-        setValue: value => { /* No persistence needed for counter */ })
+        getValue: () => _currentCountValue,
+        setValue: value => _currentCountValue = value)
     {
         Label = "Current Count",
         Hint = "Number of button clicks",
@@ -50,23 +76,21 @@ public partial class CounterViewModel : BaseViewModel
 
     /// <summary>
     /// Increments the counter.
-    /// BLAZOR USAGE: <button @onclick="ViewModel.IncrementCountCommand.Execute">Click me</button>
     /// </summary>
-    [RelayCommand]
     private void IncrementCount()
     {
         CurrentCount.Value++;
+        OnPropertyChanged(nameof(CurrentCount)); // Notify UI that CurrentCount changed
         Log?.LogDebug("Counter incremented to {Count}", CurrentCount.Value);
     }
 
     /// <summary>
     /// Resets the counter to zero.
-    /// NEW FEATURE: Demonstrates additional command.
     /// </summary>
-    [RelayCommand]
     private void ResetCount()
     {
         CurrentCount.Value = 0;
+        OnPropertyChanged(nameof(CurrentCount)); // Notify UI that CurrentCount changed
         Log?.LogInformation("Counter reset");
     }
 }

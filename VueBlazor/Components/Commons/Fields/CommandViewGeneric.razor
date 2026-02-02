@@ -1,0 +1,135 @@
+@typeparam T
+@using ViewModel.Commons.Fields
+
+@if (ElementType == "button")
+{
+    <button type="button"
+            class="@GetElementClass()"
+            @onclick="ExecuteCommand"
+            disabled="@IsDisabled()"
+            title="@Command?.Hint">
+        @RenderContent()
+    </button>
+}
+else if (ElementType == "link")
+{
+    <a href="#"
+       class="@GetElementClass()"
+       @onclick="ExecuteCommand"
+       @onclick:preventDefault
+       title="@Command?.Hint"
+       style="@(IsDisabled() ? "pointer-events: none; opacity: 0.6;" : "")">
+        @RenderContent()
+    </a>
+}
+
+@code {
+    /// <summary>
+    /// The command to execute with a parameter of type T.
+    /// </summary>
+    [Parameter]
+    public ICommandViewModel<T>? Command { get; set; }
+
+    /// <summary>
+    /// The parameter to pass to the command when executed.
+    /// </summary>
+    [Parameter]
+    public T? Parameter { get; set; }
+
+    /// <summary>
+    /// Optional CSS class to override the adaptive styling.
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    /// <summary>
+    /// The type of HTML element to render ("button" or "link").
+    /// Default is "button".
+    /// </summary>
+    [Parameter]
+    public string ElementType { get; set; } = "button";
+
+    /// <summary>
+    /// Optional child content for custom display.
+    /// If provided, this will be displayed instead of Command.Text.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Executes the command with the provided parameter.
+    /// </summary>
+    private void ExecuteCommand()
+    {
+        Command?.Command.Execute(Parameter);
+    }
+
+    /// <summary>
+    /// Returns true if the element should be disabled.
+    /// </summary>
+    private bool IsDisabled()
+    {
+        return Command?.IsBusy == true || Command?.IsEnabled == false;
+    }
+
+    /// <summary>
+    /// Renders the content (spinner + text/child content).
+    /// </summary>
+    private RenderFragment RenderContent() => builder =>
+    {
+        var sequence = 0;
+
+        // Render spinner if busy
+        if (Command?.IsBusy == true)
+        {
+            builder.OpenElement(sequence++, "span");
+            builder.AddAttribute(sequence++, "class", "spinner-border spinner-border-sm me-2");
+            builder.AddAttribute(sequence++, "role", "status");
+            builder.AddAttribute(sequence++, "aria-hidden", "true");
+            builder.CloseElement();
+        }
+
+        // Render child content or command text
+        if (ChildContent != null)
+        {
+            builder.AddContent(sequence++, ChildContent);
+        }
+        else if (!string.IsNullOrEmpty(Command?.Text))
+        {
+            builder.AddContent(sequence++, Command.Text);
+        }
+    };
+
+    /// <summary>
+    /// Gets the CSS class for the element based on Command.Style or custom CssClass.
+    /// </summary>
+    private string GetElementClass()
+    {
+        // If custom CSS class is provided, use it
+        if (!string.IsNullOrEmpty(CssClass))
+        {
+            return CssClass;
+        }
+
+        // For button elements, map CommandStyle enum to Bootstrap classes
+        if (ElementType == "button")
+        {
+            var baseClass = "btn";
+            var styleClass = (Command?.Style ?? CommandStyle.Default) switch
+            {
+                CommandStyle.Primary => "btn-primary",
+                CommandStyle.Success => "btn-success",
+                CommandStyle.Danger => "btn-danger",
+                CommandStyle.Warning => "btn-warning",
+                CommandStyle.Info => "btn-info",
+                CommandStyle.Light => "btn-light",
+                CommandStyle.Dark => "btn-dark",
+                _ => "btn-secondary"
+            };
+            return $"{baseClass} {styleClass}";
+        }
+
+        // For links, return empty class (styling should be provided via CssClass parameter)
+        return "";
+    }
+}

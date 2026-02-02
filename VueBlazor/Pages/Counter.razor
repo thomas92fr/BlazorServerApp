@@ -1,6 +1,7 @@
 ﻿@page "/counter"
 @using ViewModel
-@inject CounterViewModel ViewModel
+@using VueBlazor.Components.Commons.Fields
+@inherits ViewModelPageBase<CounterViewModel>
 
 <PageTitle>Counter</PageTitle>
 
@@ -31,13 +32,8 @@
     }
 </div>
 
-<button class="btn btn-primary" @onclick="ViewModel.IncrementCountCommand.Execute">
-    Increment Count
-</button>
-
-<button class="btn btn-secondary ms-2" @onclick="ViewModel.ResetCountCommand.Execute">
-    Reset
-</button>
+<CommandView Command="@ViewModel.IncrementCountCommand" />
+<CommandView Command="@ViewModel.ResetCountCommand" CssClass="btn btn-secondary ms-2" /> @* Override Default style with secondary *@
 
 @code {
     // ViewModel injected via DI - no initialization needed in Blazor!

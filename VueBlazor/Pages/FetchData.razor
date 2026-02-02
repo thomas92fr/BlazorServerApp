@@ -1,7 +1,9 @@
 ﻿@page "/fetchdata"
 @using ViewModel
 @using Model
-@inject WeatherForecastViewModel ViewModel
+@using VueBlazor.Components.Commons.Fields
+@using CommunityToolkit.Mvvm.Input
+@inherits ViewModelPageBase<WeatherForecastViewModel>
 
 <PageTitle>Weather forecast</PageTitle>
 
@@ -9,11 +11,9 @@
 
 <p>This component demonstrates fetching data from a service.</p>
 
-<button class="btn btn-primary mb-3"
-        @onclick="ViewModel.LoadForecastsCommand.Execute"
-        disabled="@ViewModel.IsBusy">
-    @(ViewModel.IsBusy ? "Loading..." : "Load Forecasts")
-</button>
+<div class="mb-3">
+    <CommandView Command="@ViewModel.LoadForecastsCommand" />
+</div>
 
 @if (ViewModel.IsBusy)
 {
@@ -53,7 +53,12 @@ else
 @code {
     protected override async Task OnInitializedAsync()
     {
+        base.OnInitialized(); // CRITICAL: Subscribe to PropertyChanged events
+
         // Auto-load on page initialization
-        await ViewModel.LoadForecastsCommand.ExecuteAsync(null);
+        if (ViewModel.LoadForecastsCommand.Command is IAsyncRelayCommand asyncCommand)
+        {
+            await asyncCommand.ExecuteAsync(null);
+        }
     }
 }

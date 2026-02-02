@@ -1,0 +1,85 @@
+@using ViewModel.Commons.Fields
+
+<button type="button"
+        class="@GetButtonClass()"
+        @onclick="ExecuteCommand"
+        disabled="@IsDisabled()"
+        title="@Command?.Hint">
+    @if (Command?.IsBusy == true)
+    {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    }
+    @if (ChildContent != null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        @Command?.Text
+    }
+</button>
+
+@code {
+    /// <summary>
+    /// The command to execute (without parameter).
+    /// </summary>
+    [Parameter]
+    public ICommandViewModel? Command { get; set; }
+
+    /// <summary>
+    /// Optional CSS class to override the adaptive button style.
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    /// <summary>
+    /// Optional child content for custom button text/content.
+    /// If provided, this will be displayed instead of Command.Text.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Executes the command.
+    /// </summary>
+    private void ExecuteCommand()
+    {
+        Command?.Command.Execute(null);
+    }
+
+    /// <summary>
+    /// Returns true if the button should be disabled.
+    /// </summary>
+    private bool IsDisabled()
+    {
+        return Command?.IsBusy == true || Command?.IsEnabled == false;
+    }
+
+    /// <summary>
+    /// Gets the CSS class for the button based on Command.Style or custom CssClass.
+    /// </summary>
+    private string GetButtonClass()
+    {
+        // If custom CSS class is provided, use it
+        if (!string.IsNullOrEmpty(CssClass))
+        {
+            return CssClass;
+        }
+
+        // Otherwise, map the CommandStyle enum to Bootstrap classes
+        var baseClass = "btn";
+        var styleClass = (Command?.Style ?? CommandStyle.Default) switch
+        {
+            CommandStyle.Primary => "btn-primary",
+            CommandStyle.Success => "btn-success",
+            CommandStyle.Danger => "btn-danger",
+            CommandStyle.Warning => "btn-warning",
+            CommandStyle.Info => "btn-info",
+            CommandStyle.Light => "btn-light",
+            CommandStyle.Dark => "btn-dark",
+            _ => "btn-secondary"
+        };
+
+        return $"{baseClass} {styleClass}";
+    }
+}

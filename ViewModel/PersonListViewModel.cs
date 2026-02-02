@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Model.Entities;
 using ViewModel.Commons.Bases;
 using ViewModel.Persons;
+using ViewModel.Commons.Fields;
 
 namespace ViewModel;
 
@@ -50,6 +51,40 @@ public partial class PersonListViewModel : BaseViewModel
 
     #endregion
 
+    #region Commands
+
+    /// <summary>
+    /// Command to load all persons from repository.
+    /// </summary>
+    public CommandViewModel LoadPersonsCommand { get; }
+
+    /// <summary>
+    /// Command to create a new person.
+    /// </summary>
+    public CommandViewModel AddPersonCommand { get; }
+
+    /// <summary>
+    /// Command to select a person for detail view.
+    /// </summary>
+    public CommandViewModel<PersonViewModel> SelectPersonCommand { get; }
+
+    /// <summary>
+    /// Command to delete the currently selected person.
+    /// </summary>
+    public CommandViewModel DeletePersonCommand { get; }
+
+    /// <summary>
+    /// Command to validate and save all changes.
+    /// </summary>
+    public CommandViewModel SaveAllCommand { get; }
+
+    /// <summary>
+    /// Command to discard all unsaved changes.
+    /// </summary>
+    public CommandViewModel DiscardChangesCommand { get; }
+
+    #endregion
+
     #region Constructor
 
     /// <summary>
@@ -63,6 +98,57 @@ public partial class PersonListViewModel : BaseViewModel
     ) : base(repository, logger)
     {
         Log?.LogDebug("PersonListViewModel created");
+
+        // Initialize commands without parameter
+        LoadPersonsCommand = new CommandViewModel(
+            parent: this,
+            text: "Load Persons",
+            hint: "Reload all persons from repository",
+            execute: LoadPersonsInternal,
+            style: CommandStyle.Info
+        );
+
+        AddPersonCommand = new CommandViewModel(
+            parent: this,
+            text: "Add Person",
+            hint: "Create a new person",
+            execute: AddPersonInternal,
+            style: CommandStyle.Success
+        );
+
+        DeletePersonCommand = new CommandViewModel(
+            parent: this,
+            text: "Delete Person",
+            hint: "Delete the currently selected person",
+            execute: DeleteSelectedPersonInternal,
+            style: CommandStyle.Danger
+        );
+
+        SaveAllCommand = new CommandViewModel(
+            parent: this,
+            text: "Save All",
+            hint: "Validate and save all changes to the repository",
+            execute: SaveAllInternal,
+            style: CommandStyle.Primary
+        );
+
+        DiscardChangesCommand = new CommandViewModel(
+            parent: this,
+            text: "Discard Changes",
+            hint: "Discard all unsaved changes",
+            execute: DiscardChangesInternal,
+            canExecute: () => HasChanges,
+            style: CommandStyle.Warning
+        );
+
+        // Initialize commands with parameter
+        SelectPersonCommand = new CommandViewModel<PersonViewModel>(
+            parent: this,
+            text: "Select",
+            hint: "Select this person for detail view",
+            execute: SelectPersonInternal,
+            style: CommandStyle.Default
+        );
     }
 
     #endregion
@@ -76,7 +162,7 @@ public partial class PersonListViewModel : BaseViewModel
     public void Initialize()
     {
         Log?.LogInformation("Initializing PersonListViewModel");
-        LoadPersonsCommand.Execute(null);
+        LoadPersonsCommand.Command.Execute(null);
     }
 
     #endregion
@@ -87,8 +173,7 @@ public partial class PersonListViewModel : BaseViewModel
     /// Loads all persons from repository.
     /// Auto-selects first person if none is currently selected.
     /// </summary>
-    [RelayCommand]
-    private void LoadPersons()
+    private void LoadPersonsInternal()
     {
         Log?.LogDebug("Loading persons from repository");
 
@@ -102,7 +187,6 @@ public partial class PersonListViewModel : BaseViewModel
                 SelectedPerson.Name.Value, SelectedPerson.Id.Value);
         }
 
-        UpdateHasChanges();
         Log?.LogInformation("Loaded {Count} person(s)", Persons.Count);
     }
 
@@ -110,8 +194,7 @@ public partial class PersonListViewModel : BaseViewModel
     /// Creates a new person and adds it to the list.
     /// Automatically selects the new person and clears messages.
     /// </summary>
-    [RelayCommand]
-    private void AddPerson()
+    private void AddPersonInternal()
     {
         Log?.LogDebug("Creating new person");
 
@@ -123,7 +206,6 @@ public partial class PersonListViewModel : BaseViewModel
         ValidationErrors = null;
         SaveSuccessMessage = null;
 
-        UpdateHasChanges();
         Log?.LogInformation("Added new person (Id: {Id})", newPerson.Id.Value);
     }
 
@@ -131,8 +213,7 @@ public partial class PersonListViewModel : BaseViewModel
     /// Selects a person for detail view and clears messages.
     /// </summary>
     /// <param name="person">Person to select.</param>
-    [RelayCommand]
-    private void SelectPerson(PersonViewModel person)
+    private void SelectPersonInternal(PersonViewModel person)
     {
         if (person == null)
         {
@@ -147,15 +228,14 @@ public partial class PersonListViewModel : BaseViewModel
         SaveSuccessMessage = null;
 
         Log?.LogDebug("Selected person: {PersonName} (Id: {Id})",
-            person.Name.Value, person.Id.Value);
+        person.Name.Value, person.Id.Value);
     }
 
     /// <summary>
     /// Deletes the currently selected person.
     /// Selects the first remaining person after deletion.
     /// </summary>
-    [RelayCommand]
-    private void DeleteSelectedPerson()
+    private void DeleteSelectedPersonInternal()
     {
         if (SelectedPerson == null)
         {
@@ -170,13 +250,13 @@ public partial class PersonListViewModel : BaseViewModel
 
         Repository.DeleteEntity(SelectedPerson.Model);
         Persons.Remove(SelectedPerson);
+        OnPropertyChanged(nameof(Persons)); // Notify UI that collection changed
         SelectedPerson = Persons.FirstOrDefault();
 
         // Clear messages
         ValidationErrors = null;
         SaveSuccessMessage = null;
 
-        UpdateHasChanges();
         Log?.LogInformation("Deleted person: {PersonName} (Id: {Id})", personName, personId);
     }
 
@@ -185,8 +265,7 @@ public partial class PersonListViewModel : BaseViewModel
     /// Shows validation errors or success message.
     /// Reloads persons on success to refresh IDs for new entities.
     /// </summary>
-    [RelayCommand]
-    private void SaveAll()
+    private void SaveAllInternal()
     {
         Log?.LogDebug("Attempting to save all changes");
 
@@ -198,7 +277,7 @@ public partial class PersonListViewModel : BaseViewModel
             Log?.LogInformation("Successfully saved all changes");
 
             // Reload to refresh IDs (new entities get persisted IDs)
-            LoadPersons();
+            LoadPersonsInternal();
         }
         else
         {
@@ -212,26 +291,23 @@ public partial class PersonListViewModel : BaseViewModel
                     error.PropertyName, error.ErrorMessage);
             }
         }
-
-        UpdateHasChanges();
     }
 
     /// <summary>
     /// Discards all unsaved changes.
     /// Reloads persons from repository original state.
     /// </summary>
-    [RelayCommand]
-    private void DiscardChanges()
+    private void DiscardChangesInternal()
     {
         Log?.LogDebug("Discarding all changes");
 
         Repository.DiscardChanges();
-        LoadPersons();
+        SelectedPerson= null;
+        LoadPersonsInternal();
 
         ValidationErrors = null;
         SaveSuccessMessage = "Changes discarded.";
 
-        UpdateHasChanges();
         Log?.LogInformation("All changes discarded");
     }
 
@@ -242,10 +318,15 @@ public partial class PersonListViewModel : BaseViewModel
     /// <summary>
     /// Updates HasChanges property from repository.
     /// Called after operations that might affect change state.
+    /// Notifies commands that depend on HasChanges to re-evaluate their CanExecute.
     /// </summary>
     private void UpdateHasChanges()
     {
         HasChanges = Repository.HasChanges();
+
+        // Notify commands that depend on HasChanges to re-evaluate CanExecute
+        DiscardChangesCommand.Command.NotifyCanExecuteChanged();
+        SaveAllCommand.Command.NotifyCanExecuteChanged();
     }
 
     #endregion

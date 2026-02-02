@@ -1,22 +1,17 @@
 @page "/persons"
 @using VueBlazor.Components.Persons
+@using VueBlazor.Components.Commons.Fields
 @using Model.ViewModels
-@inject PersonListViewModel ViewModel
+@inherits ViewModelPageBase<PersonListViewModel>
 
 <PageTitle>Person Management</PageTitle>
 
 <h1>Person Management</h1>
 
 <div class="mb-3">
-    <button class="btn btn-success" @onclick="ViewModel.AddPersonCommand.Execute">
-        Add Person
-    </button>
-    <button class="btn btn-primary" @onclick="ViewModel.SaveAllCommand.Execute">
-        Save All
-    </button>
-    <button class="btn btn-warning" @onclick="ViewModel.DiscardChangesCommand.Execute" disabled="@(!ViewModel.HasChanges)">
-        Discard Changes
-    </button>
+    <CommandView Command="@ViewModel.AddPersonCommand" />
+    <CommandView Command="@ViewModel.SaveAllCommand" />
+    <CommandView Command="@ViewModel.DiscardChangesCommand" />
 </div>
 
 @if (ViewModel.ValidationErrors != null && ViewModel.ValidationErrors.Any())
@@ -45,12 +40,13 @@
         <div class="list-group">
             @foreach (var person in ViewModel.Persons)
             {
-                <a href="#"
-                   class="list-group-item list-group-item-action @(person == ViewModel.SelectedPerson ? "active" : "")"
-                   @onclick="() => ViewModel.SelectPersonCommand.Execute(person)"
-                   @onclick:preventDefault>
+                <CommandViewGeneric T="PersonViewModel"
+                                    Command="@ViewModel.SelectPersonCommand"
+                                    Parameter="@person"
+                                    ElementType="link"
+                                    CssClass="@(person == ViewModel.SelectedPerson ? "list-group-item list-group-item-action active" : "list-group-item list-group-item-action")">
                     @person.Name.Value (@person.Id.Value)
-                </a>
+                </CommandViewGeneric>
             }
         </div>
     </div>
@@ -61,9 +57,7 @@
             <PersonView ViewModel="@ViewModel.SelectedPerson" />
 
             <div class="mt-3">
-                <button class="btn btn-danger" @onclick="ViewModel.DeleteSelectedPersonCommand.Execute">
-                    Delete Person
-                </button>
+                <CommandView Command="@ViewModel.DeletePersonCommand" />
             </div>
         }
         else
@@ -76,6 +70,7 @@
 @code {
     protected override void OnInitialized()
     {
+        base.OnInitialized(); // CRITICAL: Subscribe to PropertyChanged events
         ViewModel.Initialize();
     }
 }
