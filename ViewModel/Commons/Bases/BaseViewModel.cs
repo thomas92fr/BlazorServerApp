@@ -32,6 +32,27 @@ public partial class BaseViewModel : ObservableObject, IViewModel
     public ILogger<BaseViewModel>? Log => _logger;
 
     /// <summary>
+    /// Public wrapper for OnPropertyChanged to allow notification from nested FieldViewModels.
+    /// Used by FieldViewModel.NotifyOnChange to trigger recalculation of computed fields.
+    /// Automatically validates FieldViewModel properties after raising PropertyChanged.
+    /// </summary>
+    public void RaisePropertyChanged(string propertyName)
+    {
+        OnPropertyChanged(propertyName);
+
+        // For computed fields, trigger validation after recalculation
+        var property = GetType().GetProperty(propertyName);
+        if (property != null)
+        {
+            var value = property.GetValue(this);
+            if (value is IFieldViewModel fieldViewModel)
+            {
+                fieldViewModel.Validate();
+            }
+        }
+    }
+
+    /// <summary>
     /// Helper for async operations with busy indicator.
     /// BLAZOR NOTE: Use this for async commands to show loading state.
     /// </summary>

@@ -251,10 +251,10 @@ public class InMemoryRepository : IRepository
             if (typeof(IFieldViewModel).IsAssignableFrom(property.PropertyType))
             {
                 var field = property.GetValue(viewModel) as IFieldViewModel;
-                if (field != null &&
-                    !string.IsNullOrEmpty(field.Error) &&
-                    field.HasSetValueFunction)
+                if (field != null && !string.IsNullOrEmpty(field.Error))
                 {
+                    // Include all fields with errors, including computed fields
+                    // Computed fields can indicate invalid underlying data (e.g., inverted dates)
                     errors.Add(new ValidationError
                     {
                         ViewModel = viewModel,

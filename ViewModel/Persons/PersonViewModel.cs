@@ -42,6 +42,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     private BoolFieldViewModel? _isTeacherField;
     private DateTimeFieldViewModel? _startDateTimeField;
     private DateTimeFieldViewModel? _endDateTimeField;
+    private IntegerFieldViewModel? _durationInDaysField;
 
     public PersonViewModel(
         Model.Entities.Person person,
@@ -148,7 +149,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
         setValue: value => _person.StartDateTime = value)
     {
         Label = "Start Date",
-        Hint = "Start date and time"
+        Hint = "Start date and time",
+        NotifyOnChange = new[] { nameof(DurationInDays) }
     };
 
     public DateTimeFieldViewModel EndDateTime => _endDateTimeField ??= new DateTimeFieldViewModel(
@@ -157,7 +159,30 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
         setValue: value => _person.EndDateTime = value)
     {
         Label = "End Date",
-        Hint = "End date and time"
+        Hint = "End date and time",
+        NotifyOnChange = new[] { nameof(DurationInDays) }
+    };
+
+    /// <summary>
+    /// Computed field: Number of days between StartDateTime and EndDateTime.
+    /// Recalculates automatically when StartDateTime or EndDateTime changes.
+    /// BLAZOR USAGE: Display as read-only field, updates automatically.
+    /// </summary>
+    public IntegerFieldViewModel DurationInDays => _durationInDaysField ??= new IntegerFieldViewModel(
+        parent: this,
+        getValue: () => (int)(EndDateTime.Value - StartDateTime.Value).TotalDays,
+        setValue: null)
+    {
+        Label = "Duration (Days)",
+        Hint = "Calculated from Start and End dates",
+        IsComputed = true, // ReadOnly is automatically true for computed fields
+        ValidationRules = rules => rules
+            .GreaterThanOrEqualTo(0)
+                .WithMessage("Duration must be positive (End date must be after Start date).")
+                .WithSeverity(Severity.Error)
+            .LessThan(36500)
+                .WithMessage("Duration exceeds 100 years - please verify dates.")
+                .WithSeverity(Severity.Warning)
     };
 
     public override string ToString() => $"Person: {Id.Value}, {Name.Value}";

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
 using Model.ViewModels;
 using Model.Entities;
+using ViewModel.Commons.Bases;
 
 namespace ViewModel.Commons.Fields;
 
@@ -33,6 +34,10 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     private string? _hint;
     private bool _readOnly;
 
+    // Computed field support
+    private bool _isComputed;
+    private string[]? _notifyOnChange;
+
     // List support (for ComboBox/Select components)
     private bool _valueMustBeInTheList;
     private List<T>? _cachedList;
@@ -59,7 +64,13 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get
         {
-            // Lazy loading: Load on first access
+            // For computed fields, always recalculate (no cache)
+            if (IsComputed && _getValue != null)
+            {
+                return _getValue();
+            }
+
+            // For normal fields, lazy loading with cache
             if (!_isInitialized && _getValue != null)
             {
                 _value = _getValue();
@@ -69,6 +80,12 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
         }
         set
         {
+            // Block modifications on computed fields
+            if (IsComputed)
+            {
+                return; // Silent return, ReadOnly already handles UI
+            }
+
             if (ReadOnly) return;
 
             // Validate list constraint
@@ -96,6 +113,15 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
                 // Re-validate on change
                 Validate();
+
+                // Notify dependent computed fields
+                if (NotifyOnChange != null && NotifyOnChange.Length > 0 && Parent is BaseViewModel parentVm)
+                {
+                    foreach (var propertyName in NotifyOnChange)
+                    {
+                        parentVm.RaisePropertyChanged(propertyName);
+                    }
+                }
             }
         }
     }
@@ -143,9 +169,13 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
         set => SetProperty(ref _hint, value);
     }
 
+    /// <summary>
+    /// If true, the field cannot be modified in the UI.
+    /// Automatically returns true for computed fields (IsComputed = true).
+    /// </summary>
     public bool ReadOnly
     {
-        get => _readOnly;
+        get => _readOnly || IsComputed; // Computed fields are always read-only
         set => SetProperty(ref _readOnly, value);
     }
 
@@ -173,6 +203,28 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get => _valueMustBeInTheList;
         set => SetProperty(ref _valueMustBeInTheList, value);
+    }
+
+    /// <summary>
+    /// If true, getValue() is called on every Value access (no caching).
+    /// Use for computed fields that depend on other properties.
+    /// BLAZOR USAGE: Set to true for fields that calculate their value from other fields.
+    /// </summary>
+    public bool IsComputed
+    {
+        get => _isComputed;
+        set => SetProperty(ref _isComputed, value);
+    }
+
+    /// <summary>
+    /// Array of property names (use nameof()) to notify when this field's value changes.
+    /// Used to trigger recalculation of computed fields that depend on this field.
+    /// BLAZOR USAGE: StartDateTime.NotifyOnChange = new[] { nameof(DurationInDays) }
+    /// </summary>
+    public string[]? NotifyOnChange
+    {
+        get => _notifyOnChange;
+        set => SetProperty(ref _notifyOnChange, value);
     }
 
     /// <summary>
