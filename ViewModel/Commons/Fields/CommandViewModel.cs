@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace ViewModel.Commons.Fields
 {
-    public partial class CommandViewModel : ObservableObject, ICommandViewModel
+    public abstract partial class CommandViewModelBase : ObservableObject, ICommandViewModelBase
     {
         private string _text = string.Empty;
         private string _hint = string.Empty;
@@ -11,7 +11,7 @@ namespace ViewModel.Commons.Fields
         private bool _isBusy;
         private CommandStyle _style = CommandStyle.Default;
 
-        public object? Parent { get; private set; }
+        public object? Parent { get; protected set; }
 
         public bool IsBusy
         {
@@ -42,6 +42,10 @@ namespace ViewModel.Commons.Fields
             get => _style;
             set => SetProperty(ref _style, value);
         }
+    }
+
+    public partial class CommandViewModel : CommandViewModelBase, ICommandViewModel
+    {
 
         public IRelayCommand Command { get; }
 
@@ -90,45 +94,8 @@ namespace ViewModel.Commons.Fields
         }
     }
 
-    public partial class CommandViewModel<T> : ObservableObject, ICommandViewModel<T>
+    public partial class CommandViewModel<T> : CommandViewModelBase, ICommandViewModel<T>
     {
-        private string _text = string.Empty;
-        private string _hint = string.Empty;
-        private bool _isEnabled = true;
-        private bool _isBusy;
-        private CommandStyle _style = CommandStyle.Default;
-
-        public object? Parent { get; private set; }
-
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set => SetProperty(ref _isBusy, value);
-        }
-
-        public string Text
-        {
-            get => _text;
-            set => SetProperty(ref _text, value);
-        }
-
-        public string Hint
-        {
-            get => _hint;
-            set => SetProperty(ref _hint, value);
-        }
-
-        public bool IsEnabled
-        {
-            get => _isEnabled;
-            set => SetProperty(ref _isEnabled, value);
-        }
-
-        public CommandStyle Style
-        {
-            get => _style;
-            set => SetProperty(ref _style, value);
-        }
 
         public IRelayCommand<T> Command { get; }
 
