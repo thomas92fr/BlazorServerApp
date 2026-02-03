@@ -18,12 +18,18 @@
 {
     <div class="alert alert-danger">
         <h5>Validation Errors:</h5>
-        <ul>
-            @foreach (var error in ViewModel.ValidationErrors)
-            {
-                <li>@error.PropertyName: @error.ErrorMessage</li>
-            }
-        </ul>
+        @foreach (var group in ViewModel.ValidationErrors.GroupBy(e => e.ViewModel))
+        {
+            <div class="mb-2">
+                <strong>@group.Key?.ToString()</strong>
+                <ul>
+                    @foreach (var error in group)
+                    {
+                        <li>@error.PropertyName: @error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 }
 

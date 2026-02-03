@@ -185,5 +185,5 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
                 .WithSeverity(Severity.Warning)
     };
 
-    public override string ToString() => $"Person: {Id.Value}, {Name.Value}";
+    public override string ToString() => $"{Name.Value} ({Id.Value})";
 }

@@ -1,4 +1,3 @@
-using CommunityToolkit.Mvvm.Input;
 using ViewModel.Commons.Fields;
 
 namespace ViewModel.Commons.Fields;
@@ -8,7 +7,7 @@ namespace ViewModel.Commons.Fields;
 /// Includes Increment/Decrement commands for numeric inputs.
 /// BLAZOR USAGE: <InputNumber @bind-Value="ViewModel.Age.Value" />
 /// </summary>
-public partial class IntegerFieldViewModel : FieldViewModel<int>
+public class IntegerFieldViewModel : FieldViewModel<int>
 {
     public IntegerFieldViewModel(
         object? parent = null,
@@ -17,30 +16,29 @@ public partial class IntegerFieldViewModel : FieldViewModel<int>
         Func<List<int>>? listQuery = null
     ) : base(parent, getValue, setValue, listQuery)
     {
+        IncrementCommand = new CommandViewModel(
+            parent: this,
+            text: "+",
+            hint: "Increment value",
+            execute: () => { if (!ReadOnly) Value++; }
+        );
+
+        DecrementCommand = new CommandViewModel(
+            parent: this,
+            text: "-",
+            hint: "Decrement value",
+            execute: () => { if (!ReadOnly) Value--; }
+        );
     }
 
     /// <summary>
     /// Increments the value by 1.
-    /// BLAZOR USAGE: <button @onclick="ViewModel.Age.IncrementCommand.Execute">+</button>
+    /// BLAZOR USAGE: <button @onclick="ViewModel.Age.IncrementCommand.Command.Execute">+</button>
     /// </summary>
-    [RelayCommand]
-    private void Increment()
-    {
-        if (!ReadOnly)
-        {
-            Value++;
-        }
-    }
+    public CommandViewModel IncrementCommand { get; }
 
     /// <summary>
     /// Decrements the value by 1.
     /// </summary>
-    [RelayCommand]
-    private void Decrement()
-    {
-        if (!ReadOnly)
-        {
-            Value--;
-        }
-    }
+    public CommandViewModel DecrementCommand { get; }
 }

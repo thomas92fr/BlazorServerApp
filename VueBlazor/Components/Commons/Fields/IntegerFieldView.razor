@@ -13,18 +13,19 @@
                @oninput="OnValueChanged"
                disabled="@(Field?.ReadOnly ?? false)" />
 
-        <button class="btn btn-outline-secondary"
-                type="button"
-                @onclick="DecrementValue"
-                disabled="@(Field?.ReadOnly ?? false)">
-            -
-        </button>
-        <button class="btn btn-outline-secondary"
-                type="button"
-                @onclick="IncrementValue"
-                disabled="@(Field?.ReadOnly ?? false)">
-            +
-        </button>
+        @if (!(Field?.ReadOnly ?? false))
+        {
+            <button class="btn btn-outline-secondary"
+                    type="button"
+                    @onclick="DecrementValue">
+                -
+            </button>
+            <button class="btn btn-outline-secondary"
+                    type="button"
+                    @onclick="IncrementValue">
+                +
+            </button>
+        }
     </div>
 
     @if (!string.IsNullOrEmpty(Field?.Error))
@@ -61,11 +62,11 @@
 
     private void IncrementValue()
     {
-        Field?.IncrementCommand.Execute(null);
+        Field?.IncrementCommand.Command.Execute(null);
     }
 
     private void DecrementValue()
     {
-        Field?.DecrementCommand.Execute(null);
+        Field?.DecrementCommand.Command.Execute(null);
     }
 }
