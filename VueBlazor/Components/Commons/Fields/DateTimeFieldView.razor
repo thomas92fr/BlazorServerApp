@@ -6,11 +6,55 @@
         <label class="form-label">@Field.Label</label>
     }
 
-    <input type="datetime-local"
-           class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-           value="@GetDateTimeLocalValue()"
-           @onchange="OnValueChanged"
-           disabled="@(Field?.ReadOnly ?? false)" />
+    @if (Field?.List != null && Field.ValueMustBeInTheList)
+    {
+        <!-- Strict select mode: only values from list allowed -->
+        <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
+                disabled="@(Field?.ReadOnly ?? false)"
+                value="@GetDateTimeLocalValue()"
+                @onchange="OnSelectChanged">
+            @foreach (var item in Field!.List!)
+            {
+                <option value="@item.ToString("yyyy-MM-ddTHH:mm")">@item.ToString("dd/MM/yyyy HH:mm")</option>
+            }
+        </select>
+    }
+    else if (Field?.List != null)
+    {
+        <!-- Combo mode: input with dropdown list -->
+        <div class="position-relative">
+            <input type="datetime-local"
+                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+                   value="@GetDateTimeLocalValue()"
+                   @onchange="OnValueChanged"
+                   @onfocus="OnInputFocus"
+                   @onblur="OnInputBlur"
+                   disabled="@(Field?.ReadOnly ?? false)" />
+            @if (_isExpanded && Field!.List!.Count > 0)
+            {
+                <ul class="list-group position-absolute w-100 shadow-sm"
+                    style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+                    @foreach (var item in Field.List)
+                    {
+                        <li class="list-group-item list-group-item-action py-1"
+                            style="cursor: pointer;"
+                            @onmousedown="() => OnItemSelected(item)">
+                            @item.ToString("dd/MM/yyyy HH:mm")
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Input mode when no list -->
+        <input type="datetime-local"
+               class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+               value="@GetDateTimeLocalValue()"
+               @onchange="OnValueChanged"
+               disabled="@(Field?.ReadOnly ?? false)" />
+    }
 
     @if (!string.IsNullOrEmpty(Field?.Error))
     {
@@ -22,7 +66,7 @@
     @if (!string.IsNullOrEmpty(Field?.Warning))
     {
         <div class="text-warning">
-            ⚠️ @Field.Warning
+            @Field.Warning
         </div>
     }
 
@@ -39,20 +83,53 @@
     [Parameter]
     public EventCallback<DateTime> ValueChanged { get; set; }
 
+    private bool _isExpanded;
+
     private string GetDateTimeLocalValue()
     {
-        // datetime-local input expects format: yyyy-MM-ddTHH:mm
         return Field?.Value.ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
     }
 
     private async Task OnValueChanged(ChangeEventArgs e)
     {
         var value = e.Value?.ToString();
-
         if (!string.IsNullOrWhiteSpace(value) && DateTime.TryParse(value, out var dateTime) && Field != null)
         {
             Field.Value = dateTime;
             await ValueChanged.InvokeAsync(dateTime);
+        }
+    }
+
+    private void OnSelectChanged(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(value) && DateTime.TryParse(value, out var dateTime) && Field != null)
+        {
+            Field.Value = dateTime;
+        }
+    }
+
+    private void OnInputFocus()
+    {
+        _isExpanded = true;
+    }
+
+    private void OnInputBlur()
+    {
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            _isExpanded = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private async void OnItemSelected(DateTime value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+            _isExpanded = false;
+            await ValueChanged.InvokeAsync(value);
         }
     }
 }

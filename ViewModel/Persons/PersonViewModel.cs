@@ -105,15 +105,17 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     }
 
     /// <summary>
-    /// Age property with Error and Warning validations.
+    /// Age property with dropdown list selection.
     /// </summary>
     public IntegerFieldViewModel Age => _ageField ??= new IntegerFieldViewModel(
         parent: this,
         getValue: () => _person.Age,
-        setValue: value => _person.Age = value)
+        setValue: value => _person.Age = value,
+        listQuery: () => Enumerable.Range(18, 83).ToList()) // 18 to 100
     {
         Label = "Age",
         Hint = "Person's age in years",
+        ValueMustBeInTheList = false,
         ValidationRules = rules => rules
             // ERRORS (block save)
             .GreaterThanOrEqualTo(0).WithMessage("Age cannot be negative.")
@@ -124,6 +126,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
             .Must(age => age < 100).WithMessage("An age over 100 is unusual.")
                 .WithSeverity(Severity.Warning)
             .Must(age => age >= 18).WithMessage("This person is a minor.")
+                .WithSeverity(Severity.Warning)
+            .Must(age => age < 65).WithMessage("This person is at retirement age.")
                 .WithSeverity(Severity.Warning)
     };
 

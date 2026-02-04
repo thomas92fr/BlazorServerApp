@@ -6,27 +6,72 @@
         <label class="form-label">@Field.Label</label>
     }
 
-    <div class="input-group">
-        <input type="number"
-               class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-               value="@Field?.Value"
-               @oninput="OnValueChanged"
-               disabled="@(Field?.ReadOnly ?? false)" />
+    @if (Field?.List != null && Field.ValueMustBeInTheList)
+    {
+        <!-- Strict select mode: only values from list allowed -->
+        <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
+                disabled="@(Field?.ReadOnly ?? false)"
+                value="@Field?.Value"
+                @onchange="OnSelectChanged">
+            @foreach (var item in Field!.List!)
+            {
+                <option value="@item">@item</option>
+            }
+        </select>
+    }
+    else if (Field?.List != null)
+    {
+        <!-- Combo mode: input with dropdown list -->
+        <div class="position-relative">
+            <input type="number"
+                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+                   value="@Field?.Value"
+                   @oninput="OnValueChangedWithFilter"
+                   @onfocus="OnInputFocus"
+                   @onblur="OnInputBlur"
+                   disabled="@(Field?.ReadOnly ?? false)"
+                   placeholder="Saisir ou choisir dans la liste" />
+            @if (_isExpanded && FilteredList.Count > 0)
+            {
+                <ul class="list-group position-absolute w-100 shadow-sm"
+                    style="z-index: 1000; max-height: 200px; overflow-y: auto;">
+                    @foreach (var item in FilteredList)
+                    {
+                        <li class="list-group-item list-group-item-action py-1"
+                            style="cursor: pointer;"
+                            @onmousedown="() => OnItemSelected(item)">
+                            @item
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Input mode when no list -->
+        <div class="input-group">
+            <input type="number"
+                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
+                   value="@Field?.Value"
+                   @oninput="OnValueChanged"
+                   disabled="@(Field?.ReadOnly ?? false)" />
 
-        @if (!(Field?.ReadOnly ?? false))
-        {
-            <button class="btn btn-outline-secondary"
-                    type="button"
-                    @onclick="DecrementValue">
-                -
-            </button>
-            <button class="btn btn-outline-secondary"
-                    type="button"
-                    @onclick="IncrementValue">
-                +
-            </button>
-        }
-    </div>
+            @if (!(Field?.ReadOnly ?? false))
+            {
+                <button class="btn btn-outline-secondary"
+                        type="button"
+                        @onclick="DecrementValue">
+                    -
+                </button>
+                <button class="btn btn-outline-secondary"
+                        type="button"
+                        @onclick="IncrementValue">
+                    +
+                </button>
+            }
+        </div>
+    }
 
     @if (!string.IsNullOrEmpty(Field?.Error))
     {
@@ -38,7 +83,7 @@
     @if (!string.IsNullOrEmpty(Field?.Warning))
     {
         <div class="text-warning">
-            ⚠️ @Field.Warning
+            @Field.Warning
         </div>
     }
 
@@ -52,11 +97,67 @@
     [Parameter]
     public IntegerFieldViewModel? Field { get; set; }
 
-    private async Task OnValueChanged(ChangeEventArgs e)
+    private bool _isExpanded;
+    private string _filterText = "";
+
+    private List<int> FilteredList
+    {
+        get
+        {
+            if (Field?.List == null) return new List<int>();
+            if (string.IsNullOrEmpty(_filterText)) return Field.List;
+            return Field.List.Where(x => x.ToString().Contains(_filterText)).ToList();
+        }
+    }
+
+    private void OnValueChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var value) && Field != null)
         {
             Field.Value = value;
+        }
+    }
+
+    private void OnValueChangedWithFilter(ChangeEventArgs e)
+    {
+        _filterText = e.Value?.ToString() ?? "";
+        if (int.TryParse(_filterText, out var value) && Field != null)
+        {
+            Field.Value = value;
+        }
+    }
+
+    private void OnInputFocus()
+    {
+        _isExpanded = true;
+    }
+
+    private void OnInputBlur()
+    {
+        // Petit délai pour permettre le clic sur le select
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            _isExpanded = false;
+            _filterText = "";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void OnSelectChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value) && Field != null)
+        {
+            Field.Value = value;
+        }
+    }
+
+    private void OnItemSelected(int value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+            _isExpanded = false;
+            _filterText = "";
         }
     }
 
