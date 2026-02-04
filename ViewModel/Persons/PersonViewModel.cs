@@ -176,7 +176,11 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     )
     {
         Label = "Mentor",
-        Hint = "Select a mentor"
+        Hint = "Select a mentor",
+        ValidationRules = rules => rules
+            .Must(mentor => mentor?.Model != _person)
+                .WithMessage("Une personne ne peut pas être son propre mentor.")
+                .WithSeverity(Severity.Error)
     };
 
     /// <summary>
