@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Model.UnitOfWork;
 using Model.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -51,37 +50,81 @@ public partial class PersonListViewModel : BaseViewModel
 
     #endregion
 
-    #region Commands
+    #region Commands (lazy-initialized)
+
+    private CommandViewModel? _loadPersonsCommand;
+    private CommandViewModel? _addPersonCommand;
+    private CommandViewModel<PersonViewModel>? _selectPersonCommand;
+    private CommandViewModel? _deletePersonCommand;
+    private CommandViewModel? _saveAllCommand;
+    private CommandViewModel? _discardChangesCommand;
 
     /// <summary>
     /// Command to load all persons from repository.
     /// </summary>
-    public CommandViewModel LoadPersonsCommand { get; }
+    public CommandViewModel LoadPersonsCommand => _loadPersonsCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Load Persons",
+        hint: "Reload all persons from repository",
+        execute: LoadPersonsInternal,
+        style: CommandStyle.Info
+    );
 
     /// <summary>
     /// Command to create a new person.
     /// </summary>
-    public CommandViewModel AddPersonCommand { get; }
+    public CommandViewModel AddPersonCommand => _addPersonCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Add Person",
+        hint: "Create a new person",
+        execute: AddPersonInternal,
+        style: CommandStyle.Success
+    );
 
     /// <summary>
     /// Command to select a person for detail view.
     /// </summary>
-    public CommandViewModel<PersonViewModel> SelectPersonCommand { get; }
+    public CommandViewModel<PersonViewModel> SelectPersonCommand => _selectPersonCommand ??= new CommandViewModel<PersonViewModel>(
+        parent: this,
+        text: "Select",
+        hint: "Select this person for detail view",
+        execute: SelectPersonInternal,
+        style: CommandStyle.Default
+    );
 
     /// <summary>
     /// Command to delete the currently selected person.
     /// </summary>
-    public CommandViewModel DeletePersonCommand { get; }
+    public CommandViewModel DeletePersonCommand => _deletePersonCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Delete Person",
+        hint: "Delete the currently selected person",
+        execute: DeleteSelectedPersonInternal,
+        style: CommandStyle.Danger
+    );
 
     /// <summary>
     /// Command to validate and save all changes.
     /// </summary>
-    public CommandViewModel SaveAllCommand { get; }
+    public CommandViewModel SaveAllCommand => _saveAllCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Save All",
+        hint: "Validate and save all changes to the repository",
+        execute: SaveAllInternal,
+        style: CommandStyle.Primary
+    );
 
     /// <summary>
     /// Command to discard all unsaved changes.
     /// </summary>
-    public CommandViewModel DiscardChangesCommand { get; }
+    public CommandViewModel DiscardChangesCommand => _discardChangesCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Discard Changes",
+        hint: "Discard all unsaved changes",
+        execute: DiscardChangesInternal,
+        canExecute: () => HasChanges,
+        style: CommandStyle.Warning
+    );
 
     #endregion
 
@@ -98,57 +141,6 @@ public partial class PersonListViewModel : BaseViewModel
     ) : base(unitOfWork, logger)
     {
         Log?.LogDebug("PersonListViewModel created");
-
-        // Initialize commands without parameter
-        LoadPersonsCommand = new CommandViewModel(
-            parent: this,
-            text: "Load Persons",
-            hint: "Reload all persons from repository",
-            execute: LoadPersonsInternal,
-            style: CommandStyle.Info
-        );
-
-        AddPersonCommand = new CommandViewModel(
-            parent: this,
-            text: "Add Person",
-            hint: "Create a new person",
-            execute: AddPersonInternal,
-            style: CommandStyle.Success
-        );
-
-        DeletePersonCommand = new CommandViewModel(
-            parent: this,
-            text: "Delete Person",
-            hint: "Delete the currently selected person",
-            execute: DeleteSelectedPersonInternal,
-            style: CommandStyle.Danger
-        );
-
-        SaveAllCommand = new CommandViewModel(
-            parent: this,
-            text: "Save All",
-            hint: "Validate and save all changes to the repository",
-            execute: SaveAllInternal,
-            style: CommandStyle.Primary
-        );
-
-        DiscardChangesCommand = new CommandViewModel(
-            parent: this,
-            text: "Discard Changes",
-            hint: "Discard all unsaved changes",
-            execute: DiscardChangesInternal,
-            canExecute: () => HasChanges,
-            style: CommandStyle.Warning
-        );
-
-        // Initialize commands with parameter
-        SelectPersonCommand = new CommandViewModel<PersonViewModel>(
-            parent: this,
-            text: "Select",
-            hint: "Select this person for detail view",
-            execute: SelectPersonInternal,
-            style: CommandStyle.Default
-        );
     }
 
     #endregion
