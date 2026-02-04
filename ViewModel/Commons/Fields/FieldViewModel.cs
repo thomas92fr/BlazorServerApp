@@ -40,7 +40,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     // List support (for ComboBox/Select components)
     private bool _valueMustBeInTheList;
-    private List<T>? _cachedList;
 
     public FieldViewModel(
         object? parent = null,
@@ -129,31 +128,9 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     /// <summary>
     /// List of possible values (for dropdowns).
     /// BLAZOR USAGE: <select> or <InputSelect> binds to this.
+    /// Always fetches fresh data from the query.
     /// </summary>
-    public List<T>? List
-    {
-        get
-        {
-            if (_cachedList == null && _listQuery != null)
-            {
-                _cachedList = _listQuery();
-            }
-            return _cachedList;
-        }
-    }
-
-    /// <summary>
-    /// Refreshes the list from the query.
-    /// BLAZOR NOTE: Call this when underlying data changes (e.g., after SaveAll).
-    /// </summary>
-    public void RefreshList()
-    {
-        if (_listQuery != null)
-        {
-            _cachedList = _listQuery();
-            OnPropertyChanged(nameof(List));
-        }
-    }
+    public List<T>? List => _listQuery?.Invoke();
 
     // UI Metadata Properties
 
