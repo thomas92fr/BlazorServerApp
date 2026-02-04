@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using System.ComponentModel;
 
-namespace VueBlazor.Components.Base;
+namespace ViewBlazor.Components.Base;
 
 /// <summary>
 /// Base class for routable pages that use injected ViewModels.

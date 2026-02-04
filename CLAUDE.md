@@ -8,13 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Build entire solution
 dotnet build BlazorServerApp.slnx
 
-# Run the Blazor Server app (from VueBlazor directory)
-dotnet run --project VueBlazor/VueBlazor.csproj
+# Run the Blazor Server app (from ViewBlazor directory)
+dotnet run --project ViewBlazor/ViewBlazor.csproj
 
 # Run with hot reload for development
-dotnet watch --project VueBlazor/VueBlazor.csproj
+dotnet watch --project ViewBlazor/ViewBlazor.csproj
 
-# EF Core migrations (run from VueBlazor directory for startup project context)
+# EF Core migrations (run from ViewBlazor directory for startup project context)
 dotnet ef migrations add <MigrationName> --project ../Model/Model.csproj
 dotnet ef database update --project ../Model/Model.csproj
 ```
@@ -24,12 +24,12 @@ dotnet ef database update --project ../Model/Model.csproj
 Three-layer .NET 10.0 Blazor Server application using MVVM pattern:
 
 ```
-VueBlazor (UI) → ViewModel → Model (Data)
+ViewBlazor (UI) → ViewModel → Model (Data)
 ```
 
 - **Model**: Entity Framework Core 10.0 with SQLite, Unit of Work pattern, repositories
 - **ViewModel**: MVVM with CommunityToolkit.Mvvm, FluentValidation for validation
-- **VueBlazor**: Blazor Server components and pages
+- **ViewBlazor**: Blazor Server components and pages
 
 ### Key Patterns
 
@@ -52,7 +52,7 @@ Each project has a `DependencyInjection.cs` file that registers its services. Vi
 
 ### Database
 
-SQLite database (`BlazorApp.db`) in the VueBlazor project root. Entity configurations are in `Model/Data/EntityConfigurations/`.
+SQLite database (`BlazorApp.db`) in the ViewBlazor project root. Entity configurations are in `Model/Data/EntityConfigurations/`.
 
 ## Conventions
 

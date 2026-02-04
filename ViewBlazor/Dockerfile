@@ -11,19 +11,19 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["VueBlazor/VueBlazor.csproj", "VueBlazor/"]
-RUN dotnet restore "./VueBlazor/VueBlazor.csproj"
+COPY ["ViewBlazor/ViewBlazor.csproj", "ViewBlazor/"]
+RUN dotnet restore "./ViewBlazor/ViewBlazor.csproj"
 COPY . .
-WORKDIR "/src/VueBlazor"
-RUN dotnet build "./VueBlazor.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/ViewBlazor"
+RUN dotnet build "./ViewBlazor.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Cette étape permet de publier le projet de service à copier dans la phase finale
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./VueBlazor.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./ViewBlazor.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Cette phase est utilisée en production ou lors de l’exécution à partir de VS en mode normal (par défaut quand la configuration de débogage n’est pas utilisée)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "VueBlazor.dll"]
+ENTRYPOINT ["dotnet", "ViewBlazor.dll"]

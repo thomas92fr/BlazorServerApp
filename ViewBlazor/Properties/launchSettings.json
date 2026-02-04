@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "VueBlazor": {
+    "ViewBlazor": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
