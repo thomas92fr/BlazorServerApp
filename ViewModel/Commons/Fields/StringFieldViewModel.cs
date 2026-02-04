@@ -2,7 +2,6 @@ namespace ViewModel.Commons.Fields;
 
 /// <summary>
 /// FieldViewModel specialized for string properties.
-/// BLAZOR BINDING: <InputText @bind-Value="ViewModel.Name.Value" />
 /// </summary>
 public partial class StringFieldViewModel : FieldViewModel<string>
 {

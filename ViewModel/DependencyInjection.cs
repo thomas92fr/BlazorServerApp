@@ -10,7 +10,7 @@ public static class DependencyInjection
 {
     /// <summary>
     /// Adds ViewModel layer services and its dependencies (Model layer) to the DI container.
-    /// All ViewModels are registered as Scoped (shared per circuit in Blazor).
+    /// All ViewModels are registered as Scoped.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="connectionString">SQLite connection string for the Model layer.</param>

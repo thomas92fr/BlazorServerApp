@@ -8,12 +8,6 @@ namespace ViewModel;
 
 /// <summary>
 /// Counter ViewModel using advanced FieldViewModel pattern.
-///
-/// BLAZOR MIGRATION NOTES:
-/// - CurrentCount is now IntegerFieldViewModel (was simple int property)
-/// - Validation added: count cannot be negative or exceed 1000
-/// - Demonstrates how to migrate simple ViewModels to advanced pattern
-/// - Commands now use CommandViewModel pattern for consistent UI binding
 /// </summary>
 public partial class CounterViewModel : BaseViewModel
 {
@@ -54,9 +48,6 @@ public partial class CounterViewModel : BaseViewModel
 
     /// <summary>
     /// Current count with validation.
-    /// BLAZOR BINDING: @bind="ViewModel.CurrentCount.Value"
-    /// DISPLAY LABEL: @ViewModel.CurrentCount.Label
-    /// SHOW ERROR: @ViewModel.CurrentCount.Error
     /// </summary>
     public IntegerFieldViewModel CurrentCount => _currentCountField ??= new IntegerFieldViewModel(
         parent: this,

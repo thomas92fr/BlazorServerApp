@@ -149,7 +149,6 @@ public partial class PersonListViewModel : BaseViewModel
 
     /// <summary>
     /// Initializes the ViewModel by loading persons from repository.
-    /// Call this from OnInitialized() in the Blazor component.
     /// </summary>
     public void Initialize()
     {

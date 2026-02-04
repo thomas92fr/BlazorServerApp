@@ -9,13 +9,6 @@ namespace ViewModel;
 
 /// <summary>
 /// Weather Forecast ViewModel using Repository pattern.
-///
-/// BLAZOR MIGRATION NOTES:
-/// - Now inherits from BaseViewModel
-/// - Uses Repository for entity caching (when EF Core added)
-/// - Demonstrates loading data into Repository
-/// - IsBusy property from BaseViewModel for loading indicators
-/// - Commands now use AsyncCommandViewModel pattern for consistent UI binding
 /// </summary>
 public partial class WeatherForecastViewModel : BaseViewModel
 {
@@ -46,7 +39,6 @@ public partial class WeatherForecastViewModel : BaseViewModel
 
     /// <summary>
     /// All loaded weather forecasts.
-    /// BLAZOR BINDING: @foreach (var forecast in ViewModel.Forecasts)
     /// </summary>
     public IEnumerable<WeatherForecast>? Forecasts => _forecasts;
 

@@ -9,9 +9,8 @@ namespace ViewModel.Commons.Bases;
 /// Base class for all ViewModels.
 /// Combines CommunityToolkit.Mvvm with UnitOfWork pattern.
 ///
-/// BLAZOR ADAPTATION:
-/// - Still uses ObservableObject for INotifyPropertyChanged (works with Blazor via ViewModelComponentBase)
-/// - UnitOfWork is Scoped per circuit (injected via constructor)
+/// - Uses ObservableObject for INotifyPropertyChanged
+/// - UnitOfWork is Scoped (injected via constructor)
 /// - IsBusy property for async operation indicators
 /// </summary>
 public partial class BaseViewModel : ObservableObject, IViewModel
@@ -54,7 +53,6 @@ public partial class BaseViewModel : ObservableObject, IViewModel
 
     /// <summary>
     /// Helper for async operations with busy indicator.
-    /// BLAZOR NOTE: Use this for async commands to show loading state.
     /// </summary>
     protected async Task ExecuteAsync(Func<Task> operation)
     {

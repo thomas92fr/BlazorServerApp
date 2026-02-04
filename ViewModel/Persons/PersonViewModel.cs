@@ -25,11 +25,6 @@ public class PersonViewModelFactory : IEntityViewModelFactory<Person, PersonView
 /// <summary>
 /// ViewModel for Person entity.
 /// Demonstrates full FieldViewModel pattern with validation.
-///
-/// BLAZOR USAGE:
-/// 1. Get from Repository: Repository.GetViewModel<Model.Entities.Person, PersonViewModel>(person)
-/// 2. Bind to properties: @bind="ViewModel.Name.Value"
-/// 3. Display validation: @ViewModel.Name.Error
 /// </summary>
 public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Entities.Person>
 {
@@ -71,10 +66,6 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
 
     /// <summary>
     /// Name property with validation.
-    /// BLAZOR EXAMPLE:
-    /// <InputText @bind-Value="ViewModel.Name.Value" class="form-control" />
-    /// <span class="text-danger">@ViewModel.Name.Error</span>
-    /// <span class="text-warning">@ViewModel.Name.Warning</span>
     /// </summary>
     public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(
         parent: this,
@@ -133,7 +124,6 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
 
     /// <summary>
     /// Boolean property (checkbox in UI).
-    /// BLAZOR: <InputCheckbox @bind-Value="ViewModel.IsTeacher.Value" />
     /// </summary>
     public BoolFieldViewModel IsTeacher => _isTeacherField ??= new BoolFieldViewModel(
         parent: this,
@@ -146,7 +136,6 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
 
     /// <summary>
     /// DateTime property (date picker in UI).
-    /// BLAZOR: <InputDate @bind-Value="ViewModel.StartDateTime.Value" />
     /// </summary>
     public DateTimeFieldViewModel StartDateTime => _startDateTimeField ??= new DateTimeFieldViewModel(
         parent: this,
@@ -190,7 +179,6 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     /// <summary>
     /// Computed field: Number of days between StartDateTime and EndDateTime.
     /// Recalculates automatically when StartDateTime or EndDateTime changes.
-    /// BLAZOR USAGE: Display as read-only field, updates automatically.
     /// </summary>
     public IntegerFieldViewModel DurationInDays => _durationInDaysField ??= new IntegerFieldViewModel(
         parent: this,

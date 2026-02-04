@@ -9,9 +9,6 @@ namespace ViewModel.Commons.Fields;
 /// <summary>
 /// Generic property wrapper with validation, lazy loading, and UI metadata.
 ///
-/// WPF PATTERN: Unchanged - works identically in Blazor.
-/// BLAZOR INTEGRATION: Binds to Value property in Razor components.
-///
 /// Key Features:
 /// - Lazy loading: getValue() called only when Value is first accessed
 /// - Validation: FluentValidation rules with Error/Warning severity
@@ -57,7 +54,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     /// <summary>
     /// The wrapped property value.
-    /// BLAZOR BINDING: @bind="ViewModel.PropertyName.Value"
     /// </summary>
     public T? Value
     {
@@ -127,7 +123,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     /// <summary>
     /// List of possible values (for dropdowns).
-    /// BLAZOR USAGE: <select> or <InputSelect> binds to this.
     /// Always fetches fresh data from the query.
     /// </summary>
     public List<T>? List => _listQuery?.Invoke();
@@ -158,7 +153,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     /// <summary>
     /// Validation error (blocks save).
-    /// BLAZOR DISPLAY: Show in red below input field.
     /// </summary>
     public string? Error
     {
@@ -168,7 +162,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     /// <summary>
     /// Validation warning (does not block save).
-    /// BLAZOR DISPLAY: Show in orange/yellow below input field.
     /// </summary>
     public string? Warning
     {
@@ -185,7 +178,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     /// <summary>
     /// If true, getValue() is called on every Value access (no caching).
     /// Use for computed fields that depend on other properties.
-    /// BLAZOR USAGE: Set to true for fields that calculate their value from other fields.
     /// </summary>
     public bool IsComputed
     {
@@ -196,7 +188,6 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     /// <summary>
     /// Array of property names (use nameof()) to notify when this field's value changes.
     /// Used to trigger recalculation of computed fields that depend on this field.
-    /// BLAZOR USAGE: StartDateTime.NotifyOnChange = new[] { nameof(DurationInDays) }
     /// </summary>
     public string[]? NotifyOnChange
     {
@@ -214,7 +205,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
 
     /// <summary>
     /// Executes FluentValidation and sets Error/Warning properties.
-    /// BLAZOR NOTE: Automatically called on Value change, or call manually.
+    /// Automatically called on Value change, or call manually.
     /// </summary>
     public void Validate()
     {

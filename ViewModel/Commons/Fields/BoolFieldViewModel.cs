@@ -2,7 +2,6 @@ namespace ViewModel.Commons.Fields;
 
 /// <summary>
 /// FieldViewModel specialized for boolean properties.
-/// BLAZOR BINDING: <InputCheckbox @bind-Value="ViewModel.IsActive.Value" />
 /// </summary>
 public partial class BoolFieldViewModel : FieldViewModel<bool>
 {

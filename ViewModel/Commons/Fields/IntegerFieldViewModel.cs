@@ -5,7 +5,6 @@ namespace ViewModel.Commons.Fields;
 /// <summary>
 /// FieldViewModel specialized for integer properties.
 /// Includes Increment/Decrement commands for numeric inputs.
-/// BLAZOR USAGE: <InputNumber @bind-Value="ViewModel.Age.Value" />
 /// </summary>
 public class IntegerFieldViewModel : FieldViewModel<int>
 {
@@ -33,7 +32,6 @@ public class IntegerFieldViewModel : FieldViewModel<int>
 
     /// <summary>
     /// Increments the value by 1.
-    /// BLAZOR USAGE: <button @onclick="ViewModel.Age.IncrementCommand.Command.Execute">+</button>
     /// </summary>
     public CommandViewModel IncrementCommand { get; }
 
