@@ -85,15 +85,11 @@ public class UnitOfWork : IUnitOfWork
     /// <summary>
     /// Gets or creates a ViewModel for the given entity.
     /// </summary>
-    public TViewModel GetViewModel<TEntity, TViewModel>(TEntity entity)
+    public TViewModel? GetViewModel<TEntity, TViewModel>(TEntity? entity)
         where TEntity : class, IEntity
         where TViewModel : class, IEntityViewModel<TEntity>
     {
-        if (entity == null)
-        {
-            _logger?.LogWarning("GetViewModel called with null entity");
-            return null!;
-        }
+        if (entity == null) return null;
 
         var cache = GetViewModelCache<TEntity, TViewModel>();
         return cache.GetOrAdd(entity, e =>
@@ -117,7 +113,7 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             var entities = _context.Set<TEntity>().ToList();
-            return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)).ToList();
+            return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)!).ToList();
         }
         finally
         {
@@ -142,7 +138,7 @@ public class UnitOfWork : IUnitOfWork
             _context.Set<TEntity>().Add(entity);
             _logger?.LogDebug("Created new {EntityType} entity", typeof(TEntity).Name);
 
-            return GetViewModel<TEntity, TViewModel>(entity);
+            return GetViewModel<TEntity, TViewModel>(entity)!;
         }
         finally
         {

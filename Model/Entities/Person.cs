@@ -11,4 +11,19 @@ public class Person : IEntity
     public bool IsTeacher { get; set; }
     public DateTime StartDateTime { get; set; } = DateTime.Now;
     public DateTime EndDateTime { get; set; } = DateTime.Now.AddYears(1);
+
+    public int? MentorId { get; set; }
+
+    private Person? _mentor;
+    public virtual Person? Mentor
+    {
+        get => _mentor;
+        set
+        {
+            _mentor = value;
+            var newId = value?.Id;
+            if (MentorId != newId)
+                MentorId = newId;
+        }
+    }
 }

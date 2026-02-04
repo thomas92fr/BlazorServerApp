@@ -22,7 +22,10 @@ public static class DependencyInjection
     {
         // Configure Entity Framework Core with SQLite
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(connectionString));
+        {
+            options.UseSqlite(connectionString);
+            options.UseLazyLoadingProxies();
+        });
 
         // UnitOfWork is Scoped (per user circuit in Blazor)
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();

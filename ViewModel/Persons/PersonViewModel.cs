@@ -42,6 +42,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     private BoolFieldViewModel? _isTeacherField;
     private DateTimeFieldViewModel? _startDateTimeField;
     private DateTimeFieldViewModel? _endDateTimeField;
+    private ReferenceFieldViewModel<PersonViewModel>? _mentorField;
     private IntegerFieldViewModel? _durationInDaysField;
 
     public PersonViewModel(
@@ -161,6 +162,21 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
         Label = "End Date",
         Hint = "End date and time",
         NotifyOnChange = new[] { nameof(DurationInDays) }
+    };
+
+    /// <summary>
+    /// Reference to another Person acting as mentor (nullable).
+    /// Value is a PersonViewModel; setValue syncs back the entity and FK.
+    /// </summary>
+    public ReferenceFieldViewModel<PersonViewModel> Mentor => _mentorField ??= new ReferenceFieldViewModel<PersonViewModel>(
+        parent: this,
+        getValue: () => UnitOfWork.GetViewModel<Person, PersonViewModel>(_person.Mentor),
+        setValue: value => _person.Mentor = value?.Model,
+        listQuery: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>().ToList()
+    )
+    {
+        Label = "Mentor",
+        Hint = "Select a mentor"
     };
 
     /// <summary>

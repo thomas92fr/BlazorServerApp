@@ -31,5 +31,9 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
 
         builder.Property(p => p.EndDateTime)
             .IsRequired();
+
+        builder.HasOne(p => p.Mentor)
+            .WithMany()
+            .HasForeignKey(p => p.MentorId);
     }
 }

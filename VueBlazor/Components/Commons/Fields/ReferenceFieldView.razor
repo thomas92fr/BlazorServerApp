@@ -1,0 +1,74 @@
+@typeparam T where T : class
+@using ViewModel.Commons.Fields
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <label class="form-label">@Field.Label</label>
+    }
+
+    <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
+            disabled="@(Field?.ReadOnly ?? false)"
+            value="@SelectedValue"
+            @onchange="OnValueChanged">
+        <option value="">---</option>
+        @if (Field?.List != null)
+        {
+            for (int i = 0; i < Field.List.Count; i++)
+            {
+                <option value="@i">@Field.GetDisplayText(Field.List[i])</option>
+            }
+        }
+    </select>
+
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <div class="invalid-feedback d-block">
+            @Field.Error
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <div class="text-warning">
+            ⚠️ @Field.Warning
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <small class="form-text text-muted">@Field.Hint</small>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public ReferenceFieldViewModel<T>? Field { get; set; }
+
+    private string SelectedValue
+    {
+        get
+        {
+            if (Field?.Value == null || Field?.List == null) return "";
+            var index = Field.List.IndexOf(Field.Value);
+            return index >= 0 ? index.ToString() : "";
+        }
+    }
+
+    private void OnValueChanged(ChangeEventArgs e)
+    {
+        if (Field == null) return;
+
+        if (int.TryParse(e.Value?.ToString(), out var index)
+            && Field.List != null
+            && index >= 0
+            && index < Field.List.Count)
+        {
+            Field.Value = Field.List[index];
+        }
+        else
+        {
+            Field.Value = default;
+        }
+    }
+}

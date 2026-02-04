@@ -28,8 +28,9 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Gets or creates a ViewModel for the given entity.
+    /// Returns null if entity is null.
     /// </summary>
-    TViewModel GetViewModel<TEntity, TViewModel>(TEntity entity)
+    TViewModel? GetViewModel<TEntity, TViewModel>(TEntity? entity)
         where TEntity : class, IEntity
         where TViewModel : class, IEntityViewModel<TEntity>;
 
