@@ -1,5 +1,4 @@
 using FluentValidation;
-using Model.Factories;
 using Model.UnitOfWork;
 using Model.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -10,25 +9,12 @@ using ViewModel.Commons.Fields;
 namespace ViewModel.Persons;
 
 /// <summary>
-/// Factory for creating PersonViewModel instances.
-/// CONVENTION: Must be named {EntityName}ViewModelFactory in same namespace as ViewModel.
-/// </summary>
-public class PersonViewModelFactory : IEntityViewModelFactory<Person, PersonViewModel>
-{
-    public PersonViewModel Create(Person entity, IUnitOfWork unitOfWork)
-    {
-        return new PersonViewModel(entity, unitOfWork);
-    }
-}
-
-
-/// <summary>
 /// ViewModel for Person entity.
 /// Demonstrates full FieldViewModel pattern with validation.
 /// </summary>
-public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Entities.Person>
+public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
 {
-    private readonly Model.Entities.Person _person;
+    private readonly Person _person;
 
     // Field ViewModels (lazy-initialized with ??= operator)
     private IntegerFieldViewModel? _idField;
@@ -41,7 +27,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
     private IntegerFieldViewModel? _durationInDaysField;
 
     public PersonViewModel(
-        Model.Entities.Person person,
+        Person person,
         IUnitOfWork unitOfWork,
         ILogger<PersonViewModel>? logger = null
     ) : base(unitOfWork, logger)
@@ -49,7 +35,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
         _person = person;
     }
 
-    public Model.Entities.Person Model => _person;
+    public Person Model => _person;
 
     /// <summary>
     /// Id property (read-only).

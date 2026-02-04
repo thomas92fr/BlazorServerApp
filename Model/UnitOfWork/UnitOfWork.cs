@@ -388,7 +388,8 @@ public class UnitOfWork : IUnitOfWork
 
     /// <summary>
     /// Gets or creates a Factory for the given ViewModel type.
-    /// Uses reflection to find {EntityName}ViewModelFactory by convention.
+    /// First looks for a custom {EntityName}ViewModelFactory by convention.
+    /// Falls back to DefaultEntityViewModelFactory if no custom factory exists.
     /// </summary>
     private IEntityViewModelFactory<TEntity, TViewModel> GetOrCreateFactory<TEntity, TViewModel>()
         where TEntity : class, IEntity
@@ -412,16 +413,15 @@ public class UnitOfWork : IUnitOfWork
                     .FirstOrDefault(t => t.FullName == factoryTypeName);
             }
 
-            if (factoryType == null)
+            if (factoryType != null)
             {
-                var errorMsg = $"Factory not found: {factoryTypeName}. " +
-                    $"Create a class implementing IEntityViewModelFactory<{entityType.Name}, {vmType.Name}>";
-                _logger?.LogError(errorMsg);
-                throw new InvalidOperationException(errorMsg);
+                _logger?.LogDebug("Using custom factory: {FactoryType}", factoryType.Name);
+                return Activator.CreateInstance(factoryType)!;
             }
 
-            _logger?.LogDebug("Created factory: {FactoryType}", factoryType.Name);
-            return Activator.CreateInstance(factoryType)!;
+            // Fallback: use generic default factory
+            _logger?.LogDebug("Using DefaultEntityViewModelFactory for {ViewModelType}", vmType.Name);
+            return new DefaultEntityViewModelFactory<TEntity, TViewModel>();
         });
     }
 
