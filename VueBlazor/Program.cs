@@ -15,11 +15,8 @@ builder.Services.AddLogging();
 
 var app = builder.Build();
 
-// Apply migrations automatically in development
-if (app.Environment.IsDevelopment())
-{
-    await app.Services.MigrateDatabaseAsync();
-}
+// Apply pending migrations on startup
+await app.Services.MigrateDatabaseAsync();
 
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
