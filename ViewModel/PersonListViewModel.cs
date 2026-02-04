@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Model.Repositories;
+using Model.UnitOfWork;
 using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
@@ -90,12 +90,12 @@ public partial class PersonListViewModel : BaseViewModel
     /// <summary>
     /// Initializes a new instance of PersonListViewModel.
     /// </summary>
-    /// <param name="repository">Repository for data access.</param>
+    /// <param name="unitOfWork">UnitOfWork for data access.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     public PersonListViewModel(
-        IRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<PersonListViewModel>? logger = null
-    ) : base(repository, logger)
+    ) : base(unitOfWork, logger)
     {
         Log?.LogDebug("PersonListViewModel created");
 
@@ -177,7 +177,7 @@ public partial class PersonListViewModel : BaseViewModel
     {
         Log?.LogDebug("Loading persons from repository");
 
-        Persons = Repository.GetAllViewModels<Person, PersonViewModel>().ToList();
+        Persons = UnitOfWork.GetAllViewModels<Person, PersonViewModel>().ToList();
 
         // Auto-select first person if list is not empty and no person is selected
         if (Persons.Any() && SelectedPerson == null)
@@ -198,7 +198,7 @@ public partial class PersonListViewModel : BaseViewModel
     {
         Log?.LogDebug("Creating new person");
 
-        var newPerson = Repository.GetNewViewModel<Person, PersonViewModel>();
+        var newPerson = UnitOfWork.GetNewViewModel<Person, PersonViewModel>();
         Persons.Add(newPerson);
         SelectedPerson = newPerson;
 
@@ -248,7 +248,7 @@ public partial class PersonListViewModel : BaseViewModel
 
         Log?.LogDebug("Deleting person: {PersonName} (Id: {Id})", personName, personId);
 
-        Repository.DeleteEntity(SelectedPerson.Model);
+        UnitOfWork.DeleteEntity(SelectedPerson.Model);
         Persons.Remove(SelectedPerson);
         OnPropertyChanged(nameof(Persons)); // Notify UI that collection changed
         SelectedPerson = Persons.FirstOrDefault();
@@ -269,7 +269,7 @@ public partial class PersonListViewModel : BaseViewModel
     {
         Log?.LogDebug("Attempting to save all changes");
 
-        ValidationErrors = Repository.SaveAll();
+        ValidationErrors = UnitOfWork.SaveAll();
 
         if (ValidationErrors == null || !ValidationErrors.Any())
         {
@@ -301,7 +301,7 @@ public partial class PersonListViewModel : BaseViewModel
     {
         Log?.LogDebug("Discarding all changes");
 
-        Repository.DiscardChanges();
+        UnitOfWork.DiscardChanges();
         SelectedPerson= null;
         LoadPersonsInternal();
 
@@ -322,7 +322,7 @@ public partial class PersonListViewModel : BaseViewModel
     /// </summary>
     private void UpdateHasChanges()
     {
-        HasChanges = Repository.HasChanges();
+        HasChanges = UnitOfWork.HasChanges();
 
         // Notify commands that depend on HasChanges to re-evaluate CanExecute
         DiscardChangesCommand.Command.NotifyCanExecuteChanged();

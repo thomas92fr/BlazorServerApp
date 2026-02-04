@@ -1,5 +1,5 @@
 using FluentValidation;
-using Model.Repositories;
+using Model.UnitOfWork;
 using Microsoft.Extensions.Logging;
 using ViewModel.Commons.Bases;
 using ViewModel.Commons.Fields;
@@ -31,9 +31,9 @@ public partial class CounterViewModel : BaseViewModel
     public CommandViewModel ResetCountCommand { get; }
 
     public CounterViewModel(
-        IRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<CounterViewModel>? logger = null
-    ) : base(repository, logger)
+    ) : base(unitOfWork, logger)
     {
         IncrementCountCommand = new CommandViewModel(
             parent: this,

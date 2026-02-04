@@ -1,4 +1,3 @@
-using Model.Repositories;
 using Model.Entities;
 
 namespace Model.ViewModels;

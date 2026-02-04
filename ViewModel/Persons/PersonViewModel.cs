@@ -1,6 +1,6 @@
 using FluentValidation;
 using Model.Factories;
-using Model.Repositories;
+using Model.UnitOfWork;
 using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using Model.Entities;
@@ -15,9 +15,9 @@ namespace ViewModel.Persons;
 /// </summary>
 public class PersonViewModelFactory : IEntityViewModelFactory<Person, PersonViewModel>
 {
-    public PersonViewModel Create(Person entity, IRepository repository)
+    public PersonViewModel Create(Person entity, IUnitOfWork unitOfWork)
     {
-        return new PersonViewModel(entity, repository);
+        return new PersonViewModel(entity, unitOfWork);
     }
 }
 
@@ -46,9 +46,9 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Model.Ent
 
     public PersonViewModel(
         Model.Entities.Person person,
-        IRepository repository,
+        IUnitOfWork unitOfWork,
         ILogger<PersonViewModel>? logger = null
-    ) : base(repository, logger)
+    ) : base(unitOfWork, logger)
     {
         _person = person;
     }

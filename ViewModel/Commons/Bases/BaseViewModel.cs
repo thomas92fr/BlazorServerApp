@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Model.Repositories;
+using Model.UnitOfWork;
 using Model.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -7,28 +7,28 @@ namespace ViewModel.Commons.Bases;
 
 /// <summary>
 /// Base class for all ViewModels.
-/// Combines CommunityToolkit.Mvvm with Repository pattern.
+/// Combines CommunityToolkit.Mvvm with UnitOfWork pattern.
 ///
 /// BLAZOR ADAPTATION:
 /// - Still uses ObservableObject for INotifyPropertyChanged (works with Blazor via ViewModelComponentBase)
-/// - Repository is Scoped per circuit (injected via constructor)
+/// - UnitOfWork is Scoped per circuit (injected via constructor)
 /// - IsBusy property for async operation indicators
 /// </summary>
 public partial class BaseViewModel : ObservableObject, IViewModel
 {
-    private readonly IRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<BaseViewModel>? _logger;
 
     [ObservableProperty]
     private bool _isBusy;
 
-    public BaseViewModel(IRepository repository, ILogger<BaseViewModel>? logger = null)
+    public BaseViewModel(IUnitOfWork unitOfWork, ILogger<BaseViewModel>? logger = null)
     {
-        _repository = repository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
-    public IRepository Repository => _repository;
+    public IUnitOfWork UnitOfWork => _unitOfWork;
     public ILogger<BaseViewModel>? Log => _logger;
 
     /// <summary>

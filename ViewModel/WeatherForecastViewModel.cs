@@ -1,4 +1,4 @@
-using Model.Repositories;
+using Model.UnitOfWork;
 using Microsoft.Extensions.Logging;
 using Model;
 using Model.Services;
@@ -28,10 +28,10 @@ public partial class WeatherForecastViewModel : BaseViewModel
     public CommandViewModel LoadForecastsCommand { get; }
 
     public WeatherForecastViewModel(
-        IRepository repository,
+        IUnitOfWork unitOfWork,
         IWeatherForecastService forecastService,
         ILogger<WeatherForecastViewModel>? logger = null
-    ) : base(repository, logger)
+    ) : base(unitOfWork, logger)
     {
         _forecastService = forecastService;
 

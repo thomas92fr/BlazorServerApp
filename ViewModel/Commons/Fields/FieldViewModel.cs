@@ -107,7 +107,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
                     var entity = entityVm.Model;
                     if (entity != null)
                     {
-                        entityVm.Repository.MarkAsModified(entity);
+                        entityVm.UnitOfWork.MarkAsModified(entity);
                     }
                 }
 

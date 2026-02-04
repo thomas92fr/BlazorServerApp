@@ -1,63 +1,74 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using Model.Factories;
-using Model.ViewModels;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Model.Data;
 using Model.Entities;
+using Model.Factories;
+using Model.Repositories;
+using Model.ViewModels;
 
-namespace Model.Repositories;
+namespace Model.UnitOfWork;
 
 /// <summary>
-/// In-memory repository implementation with ViewModel caching.
+/// Unit of Work implementation with EF Core.
+/// Combines DbContext, repositories, and ViewModel caching.
 ///
 /// BLAZOR ADAPTATION NOTES:
-/// - Lifetime: Scoped (per user circuit) instead of WPF's Singleton
-/// - Thread safety: SemaphoreSlim still needed for async operations in Blazor
-/// - Change tracking: Custom in-memory tracking instead of EF Core ChangeTracker
-/// - Future: Can be replaced with EF Core version without changing consuming code
+/// - Lifetime: Scoped (per user circuit)
+/// - Thread safety: SemaphoreSlim for async operations
+/// - Change tracking: Uses EF Core's ChangeTracker
+/// - ViewModel cache: Caches ViewModels per entity
 /// </summary>
-public class InMemoryRepository : IRepository
+public class UnitOfWork : IUnitOfWork
 {
-    // In-memory storage: Type → List of entities
-    private readonly ConcurrentDictionary<Type, object> _storage = new();
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<UnitOfWork>? _logger;
 
-    // ViewModel cache: Type → Dictionary<Entity, ViewModel>
+    // Generic repositories cache: Type -> Repository instance
+    private readonly ConcurrentDictionary<Type, object> _repositories = new();
+
+    // ViewModel cache: Entity Type -> Dictionary<Entity, ViewModel>
     private readonly ConcurrentDictionary<Type, object> _viewModelCaches = new();
 
-    // Factory cache: ViewModel Type → Factory instance
+    // Factory cache: ViewModel Type -> Factory instance
     private readonly ConcurrentDictionary<Type, object> _factories = new();
 
-    // Change tracking: Modified/Added/Deleted entities
-    private readonly HashSet<object> _modifiedEntities = new();
-    private readonly HashSet<object> _addedEntities = new();
-    private readonly HashSet<object> _deletedEntities = new();
-
-    // Async safety: One operation at a time (critical for Blazor async workflows)
+    // Async safety: One operation at a time
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    private readonly ILogger<InMemoryRepository>? _logger;
+    // Transaction management
+    private IDbContextTransaction? _transaction;
 
     public bool AllowSaveWithErrors { get; set; }
+    private bool _disposed;
 
-    public InMemoryRepository(ILogger<InMemoryRepository>? logger = null)
+    public UnitOfWork(ApplicationDbContext context, ILogger<UnitOfWork>? logger = null)
     {
+        _context = context;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Gets or creates the in-memory storage for a given entity type.
-    /// </summary>
-    private List<TEntity> GetStorage<TEntity>() where TEntity : class, IEntity
-    {
-        return (List<TEntity>)_storage.GetOrAdd(
-            typeof(TEntity),
-            _ => new List<TEntity>()
-        );
-    }
+    #region IUnitOfWork - Repository Access
 
     /// <summary>
-    /// Gets or creates the ViewModel cache for a given entity type.
-    /// Uses EntityEqualityComparer to handle unpersisted entities (Id=0).
+    /// Gets or creates a generic repository for the specified entity type.
+    /// </summary>
+    public IGenericRepository<TEntity> Repository<TEntity>() where TEntity : class, IEntity
+    {
+        var type = typeof(TEntity);
+        return (IGenericRepository<TEntity>)_repositories.GetOrAdd(type,
+            _ => new GenericRepository<TEntity>(_context));
+    }
+
+    #endregion
+
+    #region ViewModel Caching
+
+    /// <summary>
+    /// Gets the ViewModel cache for a given entity type.
+    /// Uses EntityEqualityComparer for proper handling of new entities (Id=0).
     /// </summary>
     private ConcurrentDictionary<TEntity, TViewModel> GetViewModelCache<TEntity, TViewModel>()
         where TEntity : class, IEntity
@@ -73,7 +84,6 @@ public class InMemoryRepository : IRepository
 
     /// <summary>
     /// Gets or creates a ViewModel for the given entity.
-    /// BLAZOR NOTE: ViewModels are cached per circuit, ensuring one instance per entity per user.
     /// </summary>
     public TViewModel GetViewModel<TEntity, TViewModel>(TEntity entity)
         where TEntity : class, IEntity
@@ -86,7 +96,6 @@ public class InMemoryRepository : IRepository
         }
 
         var cache = GetViewModelCache<TEntity, TViewModel>();
-
         return cache.GetOrAdd(entity, e =>
         {
             var factory = GetOrCreateFactory<TEntity, TViewModel>();
@@ -98,8 +107,7 @@ public class InMemoryRepository : IRepository
     }
 
     /// <summary>
-    /// Loads all entities and returns their ViewModels.
-    /// BLAZOR NOTE: Async-safe with SemaphoreSlim.
+    /// Loads all entities from database and returns their ViewModels.
     /// </summary>
     public IEnumerable<TViewModel> GetAllViewModels<TEntity, TViewModel>()
         where TEntity : class, IEntity
@@ -108,11 +116,8 @@ public class InMemoryRepository : IRepository
         _semaphore.Wait();
         try
         {
-            var storage = GetStorage<TEntity>();
-            return storage
-                .Where(e => !_deletedEntities.Contains(e))
-                .Select(e => GetViewModel<TEntity, TViewModel>(e))
-                .ToList();
+            var entities = _context.Set<TEntity>().ToList();
+            return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)).ToList();
         }
         finally
         {
@@ -122,7 +127,7 @@ public class InMemoryRepository : IRepository
 
     /// <summary>
     /// Creates a new entity and returns its ViewModel.
-    /// BLAZOR NOTE: Entity not persisted until SaveAll() is called.
+    /// Entity is added to EF Core's change tracker but not saved until SaveChanges.
     /// </summary>
     public TViewModel GetNewViewModel<TEntity, TViewModel>()
         where TEntity : class, IEntity
@@ -132,12 +137,9 @@ public class InMemoryRepository : IRepository
         try
         {
             var entity = Activator.CreateInstance<TEntity>();
-            entity.Id = 0; // Not persisted yet
+            entity.Id = 0; // New entity marker
 
-            var storage = GetStorage<TEntity>();
-            storage.Add(entity);
-            _addedEntities.Add(entity);
-
+            _context.Set<TEntity>().Add(entity);
             _logger?.LogDebug("Created new {EntityType} entity", typeof(TEntity).Name);
 
             return GetViewModel<TEntity, TViewModel>(entity);
@@ -149,15 +151,80 @@ public class InMemoryRepository : IRepository
     }
 
     /// <summary>
-    /// Validates all ViewModels and persists changes if no errors exist.
-    /// BLAZOR NOTE: This is where FluentValidation errors are collected.
+    /// Marks an entity for deletion.
+    /// Not actually deleted until SaveChanges() is called.
+    /// </summary>
+    public void DeleteEntity<TEntity>(TEntity entity) where TEntity : class, IEntity
+    {
+        _semaphore.Wait();
+        try
+        {
+            var entry = _context.Entry(entity);
+            if (entry.State == EntityState.Detached)
+            {
+                _context.Set<TEntity>().Attach(entity);
+            }
+            _context.Set<TEntity>().Remove(entity);
+
+            // Remove from ViewModel cache
+            if (_viewModelCaches.TryGetValue(typeof(TEntity), out var cache))
+            {
+                var tryRemoveMethod = cache.GetType().GetMethod("TryRemove",
+                    new[] { typeof(TEntity), typeof(object).MakeByRefType() });
+                if (tryRemoveMethod != null)
+                {
+                    var parameters = new object?[] { entity, null };
+                    tryRemoveMethod.Invoke(cache, parameters);
+                }
+            }
+
+            _logger?.LogDebug("Marked {EntityType} with Id={Id} for deletion",
+                typeof(TEntity).Name, entity.Id);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Marks an entity as modified in EF Core's change tracker.
+    /// </summary>
+    public void MarkAsModified<TEntity>(TEntity entity) where TEntity : class, IEntity
+    {
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Unchanged)
+        {
+            entry.State = EntityState.Modified;
+        }
+    }
+
+    #endregion
+
+    #region Save and Change Tracking
+
+    /// <summary>
+    /// Validates all ViewModels and saves changes to database.
     /// Returns null on success, or list of ValidationError on failure.
     /// </summary>
     public List<ValidationError>? SaveAll()
     {
+        return SaveAllAsync().GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Async version of SaveAll with validation.
+    /// </summary>
+    public async Task<List<ValidationError>?> SaveChangesAsync()
+    {
+        return await SaveAllAsync();
+    }
+
+    private async Task<List<ValidationError>?> SaveAllAsync()
+    {
         var allErrors = new List<ValidationError>();
 
-        _semaphore.Wait();
+        await _semaphore.WaitAsync();
         try
         {
             if (!AllowSaveWithErrors)
@@ -188,49 +255,20 @@ public class InMemoryRepository : IRepository
                 }
             }
 
-            // Assign IDs to new entities
-            foreach (var entity in _addedEntities.OfType<IEntity>())
-            {
-                if (entity.Id == 0)
-                {
-                    var entityType = entity.GetType();
-                    if (_storage.TryGetValue(entityType, out var storage))
-                    {
-                        var storageList = storage as System.Collections.IList;
-                        var maxId = 0;
-                        if (storageList != null)
-                        {
-                            foreach (var item in storageList)
-                            {
-                                if (item is IEntity e && e.Id > maxId)
-                                {
-                                    maxId = e.Id;
-                                }
-                            }
-                        }
-                        entity.Id = maxId + 1;
-                    }
-                }
-            }
-
-            // Clear change tracking
-            _modifiedEntities.Clear();
-            _addedEntities.Clear();
-
-            // Remove deleted entities from storage
-            foreach (var deleted in _deletedEntities.OfType<IEntity>())
-            {
-                var storageType = deleted.GetType();
-                if (_storage.TryGetValue(storageType, out var storage))
-                {
-                    var removeMethod = storage.GetType().GetMethod("Remove");
-                    removeMethod?.Invoke(storage, new[] { deleted });
-                }
-            }
-            _deletedEntities.Clear();
-
-            _logger?.LogInformation("SaveAll completed successfully");
+            await _context.SaveChangesAsync();
+            _logger?.LogInformation("SaveChanges completed successfully");
             return null; // Success
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger?.LogError(ex, "Database update failed");
+            allErrors.Add(new ValidationError
+            {
+                ViewModel = null!,
+                PropertyName = "Database",
+                ErrorMessage = ex.InnerException?.Message ?? ex.Message
+            });
+            return allErrors;
         }
         finally
         {
@@ -253,8 +291,6 @@ public class InMemoryRepository : IRepository
                 var field = property.GetValue(viewModel) as IFieldViewModel;
                 if (field != null && !string.IsNullOrEmpty(field.Error))
                 {
-                    // Include all fields with errors, including computed fields
-                    // Computed fields can indicate invalid underlying data (e.g., inverted dates)
                     errors.Add(new ValidationError
                     {
                         ViewModel = viewModel,
@@ -269,16 +305,14 @@ public class InMemoryRepository : IRepository
     }
 
     /// <summary>
-    /// Checks if any changes exist (added/modified/deleted).
+    /// Checks if there are any pending changes in EF Core's change tracker.
     /// </summary>
     public bool HasChanges()
     {
         _semaphore.Wait();
         try
         {
-            return _modifiedEntities.Any() ||
-                   _addedEntities.Any() ||
-                   _deletedEntities.Any();
+            return _context.ChangeTracker.HasChanges();
         }
         finally
         {
@@ -287,29 +321,30 @@ public class InMemoryRepository : IRepository
     }
 
     /// <summary>
-    /// Discards all pending changes.
-    /// BLAZOR NOTE: In-memory version is simpler than EF Core's Reload().
+    /// Discards all pending changes by reloading entities from database.
     /// </summary>
     public void DiscardChanges()
     {
         _semaphore.Wait();
         try
         {
-            // Remove added entities from storage
-            foreach (var added in _addedEntities.OfType<IEntity>())
+            // Reload all tracked entities to their original values
+            foreach (var entry in _context.ChangeTracker.Entries().ToList())
             {
-                var storageType = added.GetType();
-                if (_storage.TryGetValue(storageType, out var storage))
+                switch (entry.State)
                 {
-                    var removeMethod = storage.GetType().GetMethod("Remove");
-                    removeMethod?.Invoke(storage, new[] { added });
+                    case EntityState.Modified:
+                    case EntityState.Deleted:
+                        entry.Reload();
+                        break;
+                    case EntityState.Added:
+                        entry.State = EntityState.Detached;
+                        break;
                 }
             }
 
-            // Clear change tracking
-            _modifiedEntities.Clear();
-            _addedEntities.Clear();
-            _deletedEntities.Clear();
+            // Clear ViewModel caches (they might hold stale data)
+            _viewModelCaches.Clear();
 
             _logger?.LogInformation("DiscardChanges completed");
         }
@@ -319,39 +354,41 @@ public class InMemoryRepository : IRepository
         }
     }
 
-    /// <summary>
-    /// Marks an entity for deletion.
-    /// BLAZOR NOTE: Not actually removed until SaveAll() is called.
-    /// </summary>
-    public void DeleteEntity<TEntity>(TEntity entity) where TEntity : class, IEntity
+    #endregion
+
+    #region Transaction Support
+
+    public async Task BeginTransactionAsync()
     {
-        _semaphore.Wait();
-        try
-        {
-            _deletedEntities.Add(entity);
-            _addedEntities.Remove(entity);
-            _modifiedEntities.Remove(entity);
+        _transaction = await _context.Database.BeginTransactionAsync();
+        _logger?.LogDebug("Transaction started");
+    }
 
-            // Remove from ViewModel cache
-            if (_viewModelCaches.TryGetValue(typeof(TEntity), out var cache))
-            {
-                var tryRemoveMethod = cache.GetType().GetMethod("TryRemove",
-                    new[] { typeof(TEntity), typeof(object).MakeByRefType() });
-                if (tryRemoveMethod != null)
-                {
-                    var parameters = new object?[] { entity, null };
-                    tryRemoveMethod.Invoke(cache, parameters);
-                }
-            }
-
-            _logger?.LogDebug("Marked {EntityType} with Id={Id} for deletion",
-                typeof(TEntity).Name, entity.Id);
-        }
-        finally
+    public async Task CommitTransactionAsync()
+    {
+        if (_transaction != null)
         {
-            _semaphore.Release();
+            await _transaction.CommitAsync();
+            await _transaction.DisposeAsync();
+            _transaction = null;
+            _logger?.LogDebug("Transaction committed");
         }
     }
+
+    public async Task RollbackTransactionAsync()
+    {
+        if (_transaction != null)
+        {
+            await _transaction.RollbackAsync();
+            await _transaction.DisposeAsync();
+            _transaction = null;
+            _logger?.LogDebug("Transaction rolled back");
+        }
+    }
+
+    #endregion
+
+    #region Factory Discovery
 
     /// <summary>
     /// Gets or creates a Factory for the given ViewModel type.
@@ -392,15 +429,41 @@ public class InMemoryRepository : IRepository
         });
     }
 
-    /// <summary>
-    /// Tracks entity as modified (for change detection).
-    /// Called by ViewModels when properties change.
-    /// </summary>
-    public void MarkAsModified<TEntity>(TEntity entity) where TEntity : class, IEntity
+    #endregion
+
+    #region Dispose
+
+    public void Dispose()
     {
-        if (!_addedEntities.Contains(entity))
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed && disposing)
         {
-            _modifiedEntities.Add(entity);
+            _transaction?.Dispose();
+            _context.Dispose();
+            _semaphore.Dispose();
+            _disposed = true;
         }
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            if (_transaction != null)
+            {
+                await _transaction.DisposeAsync();
+            }
+            await _context.DisposeAsync();
+            _semaphore.Dispose();
+            _disposed = true;
+        }
+        GC.SuppressFinalize(this);
+    }
+
+    #endregion
 }

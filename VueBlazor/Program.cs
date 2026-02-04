@@ -1,5 +1,7 @@
-using Model.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Model.Data;
 using Model.Services;
+using Model.UnitOfWork;
 using ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,9 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-// BLAZOR KEY: Repository is Scoped (per user circuit), not Singleton
-// Each user connection gets their own Repository instance with isolated cache
-builder.Services.AddScoped<IRepository, InMemoryRepository>();
+// Configure Entity Framework Core with SQLite
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// BLAZOR KEY: UnitOfWork is Scoped (per user circuit)
+// Each user connection gets their own UnitOfWork instance with isolated cache
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Register services
 builder.Services.AddSingleton<IWeatherForecastService, WeatherForecastService>();
@@ -25,6 +31,14 @@ builder.Services.AddScoped<PersonListViewModel>();
 builder.Services.AddLogging();
 
 var app = builder.Build();
+
+// Apply migrations automatically in development
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await context.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -1,4 +1,4 @@
-using Model.Repositories;
+using Model.UnitOfWork;
 using Model.ViewModels;
 using Model.Entities;
 
@@ -12,5 +12,5 @@ public interface IEntityViewModelFactory<TEntity, TViewModel>
     where TEntity : class, IEntity
     where TViewModel : class, IEntityViewModel<TEntity>
 {
-    TViewModel Create(TEntity entity, IRepository repository);
+    TViewModel Create(TEntity entity, IUnitOfWork unitOfWork);
 }

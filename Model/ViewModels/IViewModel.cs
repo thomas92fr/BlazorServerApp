@@ -1,12 +1,12 @@
-using Model.Repositories;
+using Model.UnitOfWork;
 
 namespace Model.ViewModels;
 
 /// <summary>
 /// Base interface for all ViewModels.
-/// Provides access to Repository for data operations.
+/// Provides access to UnitOfWork for data operations.
 /// </summary>
 public interface IViewModel
 {
-    IRepository Repository { get; }
+    IUnitOfWork UnitOfWork { get; }
 }
