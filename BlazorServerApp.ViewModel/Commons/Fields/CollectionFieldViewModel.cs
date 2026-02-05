@@ -650,4 +650,9 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     {
         return Label ?? $"Liste ({Label})";
     }
+
+    /// <summary>
+    /// Gets the collection count for serialization purposes.
+    /// </summary>
+    public object? GetRawValue() => Count;
 }

@@ -42,4 +42,9 @@ public interface IFieldViewModel
     /// Default is 0.
     /// </summary>
     int FormGroupOrder { get; set; }
+
+    /// <summary>
+    /// Gets the raw value for serialization purposes.
+    /// </summary>
+    object? GetRawValue();
 }

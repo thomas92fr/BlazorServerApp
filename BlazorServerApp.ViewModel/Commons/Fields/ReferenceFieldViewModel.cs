@@ -1,3 +1,5 @@
+using BlazorServerApp.Model.ViewModels;
+
 namespace BlazorServerApp.ViewModel.Commons.Fields;
 
 /// <summary>
@@ -34,5 +36,30 @@ public class ReferenceFieldViewModel<T> : FieldViewModel<T> where T : class
     {
         if (item == null) return string.Empty;
         return DisplaySelector?.Invoke(item) ?? item.ToString() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the ID of the referenced entity for serialization.
+    /// Returns the entity ID instead of the full ViewModel.
+    /// </summary>
+    public override object? GetRawValue()
+    {
+        var vm = Value;
+        if (vm == null) return null;
+
+        // Get Model.Id via reflection on IEntityViewModel<TEntity>
+        var entityVmInterface = vm.GetType().GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType &&
+                i.GetGenericTypeDefinition() == typeof(IEntityViewModel<>));
+
+        if (entityVmInterface != null)
+        {
+            var modelProp = vm.GetType().GetProperty("Model");
+            var model = modelProp?.GetValue(vm);
+            var idProp = model?.GetType().GetProperty("Id");
+            return idProp?.GetValue(model);
+        }
+
+        return vm.ToString();
     }
 }

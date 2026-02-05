@@ -65,6 +65,13 @@ BlazorServerApp.ViewBlazor/
 ├── Pages/                         # Routable pages (@page)
 ├── _Imports.razor                 # Global imports (includes Radzen, Radzen.Blazor)
 └── Program.cs
+
+BlazorServerApp.ViewMCP/
+├── Discovery/
+│   ├── CollectionMetadata.cs      # Metadata records for discovered collections
+│   ├── ViewModelDiscoveryService.cs # Scans RootViewModels for CollectionFieldViewModels
+│   └── DynamicToolRegistrar.cs    # Creates MCP tools dynamically
+└── DependencyInjection.cs         # AddViewMcp(), MapViewMcp()
 ```
 
 ## Key Patterns
@@ -473,9 +480,11 @@ Create `ProductView.razor` using existing field components:
 ### Dependency Injection
 - `IUnitOfWorkFactory`: **Singleton** - creates isolated UnitOfWork per tab
 - `IDbContextFactory<ApplicationDbContext>`: **Singleton** - used by UnitOfWorkFactory
+- `ViewModelDiscoveryService`: **Singleton** - discovers RootViewModels for MCP tools
+- `DynamicToolRegistrar`: **Singleton** - creates MCP tools at startup
 - RootViewModels: **Not registered** - created manually via `new RootViewModel(unitOfWorkFactory.Create())`
 - EntityViewModels: **Not registered** - created by factory when accessing entities
-- Chain: `BlazorServerApp.ViewBlazor.Program` → `ViewModel.AddViewModels()` → `Model.AddModel()`
+- Chain: `BlazorServerApp.ViewBlazor.Program` → `ViewModel.AddViewModels()` → `Model.AddModel()` + `ViewMCP.AddViewMcp()`
 
 ### Database
 - SQLite: `BlazorApp.db` in BlazorServerApp.ViewBlazor root
@@ -550,3 +559,85 @@ All field views use `RadzenFormField` with `Variant.Outlined`:
     <RadzenAlert AlertStyle="AlertStyle.Danger" ... />
 }
 ```
+
+## MCP Server (Model Context Protocol)
+
+The application exposes an MCP server at `/mcp` for AI assistant integration. Tools are **auto-discovered** from RootViewModels.
+
+### Auto-Discovery System
+
+The MCP server automatically generates tools by scanning:
+1. All classes inheriting from `RootViewModel`
+2. Their `CollectionFieldViewModel<T>` properties
+3. The `IFieldViewModel` properties of the item type `T`
+
+**Example:** `PersonListViewModel` with `CollectionFieldViewModel<PersonViewModel> Persons` automatically generates a `GetAllPersons` tool.
+
+### How It Works
+
+```
+RootViewModel (PersonListViewModel)
+  └── CollectionFieldViewModel<PersonViewModel> Persons
+        └── PersonViewModel
+              └── IFieldViewModel properties → serialized via GetRawValue()
+```
+
+**Key Components:**
+- `ViewModelDiscoveryService` - Scans assemblies for RootViewModels and their collections
+- `DynamicToolRegistrar` - Creates `McpServerTool` instances for each discovered entity
+- `IFieldViewModel.GetRawValue()` - Returns raw value for JSON serialization
+
+### Generated Tools
+
+For each `CollectionFieldViewModel<T>` discovered, a `GetAll{CollectionName}` tool is generated:
+
+| RootViewModel | Collection Property | Generated Tool |
+|---------------|---------------------|----------------|
+| `PersonListViewModel` | `Persons` | `GetAllPersons` |
+| `ProductListViewModel` | `Products` | `GetAllProducts` |
+
+### Tool Output Format
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "age": 30,
+      "isTeacher": false,
+      "score": 85.5,
+      "mentor": 2
+    }
+  ],
+  "count": 1
+}
+```
+
+**Serialization Rules:**
+- Primitive types → direct value
+- `DateTime` → ISO 8601 format
+- `TimeSpan` → "hh:mm:ss" format
+- `ReferenceFieldViewModel<T>` → referenced entity's ID (not full object)
+- `CollectionFieldViewModel<T>` → count only
+
+### Adding MCP Support to New Entities
+
+No additional configuration needed! When you create a new `RootViewModel` with a `CollectionFieldViewModel<T>`:
+
+1. The `ViewModelDiscoveryService` automatically detects it at startup
+2. A `GetAll{CollectionName}` tool is registered
+3. The tool serializes all `IFieldViewModel` properties
+
+### Configuration
+
+**Program.cs:**
+```csharp
+// Add MCP server services
+builder.Services.AddViewMcp();
+
+// Map MCP endpoints
+app.MapViewMcp();
+```
+
+**Endpoint:** `https://localhost:port/mcp`

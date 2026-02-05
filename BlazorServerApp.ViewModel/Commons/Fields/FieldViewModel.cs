@@ -293,4 +293,10 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         return Label ?? typeof(T).Name;
     }
+
+    /// <summary>
+    /// Gets the raw value for serialization purposes.
+    /// Override in derived classes to customize serialization behavior.
+    /// </summary>
+    public virtual object? GetRawValue() => Value;
 }
