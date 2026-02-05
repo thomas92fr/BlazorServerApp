@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using System.ComponentModel;
 
-namespace ViewBlazor.Components.Base;
+namespace BlazorServerApp.ViewBlazor.Components.Base;
 
 /// <summary>
 /// Base component that automatically calls StateHasChanged when ViewModel properties change.
