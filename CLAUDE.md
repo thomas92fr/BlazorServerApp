@@ -75,11 +75,13 @@ All entity properties are wrapped in typed FieldViewModels:
 | `BoolFieldViewModel` | Checkboxes |
 | `DateTimeFieldViewModel` | Date/time pickers |
 | `ReferenceFieldViewModel<T>` | Entity references (dropdowns) |
+| `CollectionFieldViewModel<T>` | Collections (table view with CRUD) |
 
 **Features:**
 - Lazy-loaded values via getter/setter delegates
 - FluentValidation with Error/Warning severity separation
-- UI metadata (Label, Hint, ReadOnly)
+- UI metadata (Label, Hint, ReadOnly, ColumnWidth, ColumnOrder)
+- Form grouping (FormGroupHeader, FormGroupOrder)
 - Computed field support with auto-recalculation
 - Automatic entity change tracking via `MarkAsModified()`
 - List support via `listQuery` for dropdowns
@@ -97,6 +99,65 @@ public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(
         .NotEmpty().WithMessage("Required.").WithSeverity(Severity.Error)
         .MaximumLength(100).WithMessage("Too long.").WithSeverity(Severity.Error)
         .Must(n => n?.Length >= 2).WithMessage("Short name.").WithSeverity(Severity.Warning)
+};
+```
+
+### CollectionFieldViewModel Pattern
+
+For managing collections of ViewModels with table rendering:
+
+```csharp
+public CollectionFieldViewModel<PersonViewModel> Persons => _personsField ??= new CollectionFieldViewModel<PersonViewModel>(
+    parent: this,
+    query: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>())
+{
+    Label = "Persons",
+    AllowAdd = true,
+    AllowDelete = true,
+    AllowMultiSelect = true,   // Enable Ctrl+Click, Shift+Click selection
+    CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
+    OnItemAdded = vm => { /* Track new entity */ },
+    OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
+};
+```
+
+**Features:**
+- ObservableCollection with lazy loading via query
+- Auto-generated columns from IFieldViewModel properties (ordered by `ColumnOrder`)
+- Built-in commands: `AddCommand`, `DeleteCommand`, `RefreshCommand`, `DeleteSelectedCommand`
+- Single selection (`SelectedItem`) and multi-selection (`SelectedItems`)
+- Multi-select: Ctrl+Click toggle, Shift+Click range, checkbox column with select-all
+- CRUD delegates: `CreateItem`, `OnItemAdded`, `OnItemDeleted`
+- Permissions: `AllowAdd`, `AllowUpdate`, `AllowDelete`, `AllowMultiSelect`
+
+### AutoFormView Component
+
+Automatically generates a form from any ViewModel by discovering IFieldViewModel properties:
+
+```razor
+<AutoFormView ViewModel="@SelectedPerson" />
+
+@* With options *@
+<AutoFormView ViewModel="@SelectedPerson"
+              ExcludeFields="@(new[] { "Id" })"
+              RespectHiddenInColumn="false" />
+```
+
+**Parameters:**
+- `ViewModel` - The ViewModel instance to render
+- `IncludeFields` - Only show these field names (optional)
+- `ExcludeFields` - Hide these field names (optional)
+- `RespectHiddenInColumn` - If true, honors `HiddenInColumn` property (default: false)
+
+**Form Grouping:**
+Fields are grouped using `FormGroupHeader` and ordered by `FormGroupOrder`:
+```csharp
+public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(...)
+{
+    Label = "Name",
+    FormGroupHeader = "Identification",  // Group name
+    FormGroupOrder = 1,                   // Group display order
+    ColumnOrder = 2                       // Field order within group
 };
 ```
 
@@ -258,6 +319,8 @@ Create `ProductView.razor` using existing field components:
 - Validation severity: `.WithSeverity(Severity.Error)` blocks save, `.WithSeverity(Severity.Warning)` allows save
 - Computed fields: `IsComputed = true` (auto ReadOnly), `NotifyOnChange = new[] { "DependentProp" }`
 - Reference fields: getValue returns ViewModel, setValue receives ViewModel, listQuery returns List<ViewModel>
+- Table columns: `ColumnOrder` (sort order), `ColumnWidth` (CSS width), `HiddenInColumn` (exclude from table)
+- Form groups: `FormGroupHeader` (group name), `FormGroupOrder` (group order)
 
 ### Dependency Injection
 - ViewModels: **Scoped** (per Blazor circuit)
@@ -278,5 +341,7 @@ Create `ProductView.razor` using existing field components:
 | `BoolFieldView` | `BoolFieldViewModel` | Checkbox |
 | `DateTimeFieldView` | `DateTimeFieldViewModel` | Date/time picker |
 | `ReferenceFieldView` | `ReferenceFieldViewModel<T>` | Entity dropdown |
+| `CollectionFieldView` | `CollectionFieldViewModel<T>` | Table with CRUD, selection |
+| `AutoFormView` | Any ViewModel | Auto-generated form |
 | `CommandView` | `CommandViewModel` | Button |
 | `CommandViewGeneric` | `CommandViewModel<T>` | Button with parameter |
