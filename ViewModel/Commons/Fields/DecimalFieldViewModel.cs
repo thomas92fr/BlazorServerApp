@@ -1,4 +1,4 @@
-namespace ViewModel.Commons.Fields;
+namespace BlazorServerApp.ViewModel.Commons.Fields;
 
 public class DecimalFieldViewModel : FieldViewModel<decimal>
 {

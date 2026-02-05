@@ -2,9 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
 using BlazorServerApp.Model.ViewModels;
 using BlazorServerApp.Model.Entities;
-using ViewModel.Commons.Bases;
+using BlazorServerApp.ViewModel.Commons.Bases;
 
-namespace ViewModel.Commons.Fields;
+namespace BlazorServerApp.ViewModel.Commons.Fields;
 
 /// <summary>
 /// Generic property wrapper with validation, lazy loading, and UI metadata.

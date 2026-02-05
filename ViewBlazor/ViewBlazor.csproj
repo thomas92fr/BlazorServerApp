@@ -16,6 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Model\BlazorServerApp.Model.csproj" />
-    <ProjectReference Include="..\ViewModel\ViewModel.csproj" />
+    <ProjectReference Include="..\ViewModel\BlazorServerApp.ViewModel.csproj" />
   </ItemGroup>
 </Project>

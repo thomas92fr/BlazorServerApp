@@ -3,11 +3,11 @@ using BlazorServerApp.Model.UnitOfWork;
 using BlazorServerApp.Model.ViewModels;
 using Microsoft.Extensions.Logging;
 using BlazorServerApp.Model.Entities;
-using ViewModel.Commons.Bases;
-using ViewModel.Persons;
-using ViewModel.Commons.Fields;
+using BlazorServerApp.ViewModel.Commons.Bases;
+using BlazorServerApp.ViewModel.Persons;
+using BlazorServerApp.ViewModel.Commons.Fields;
 
-namespace ViewModel;
+namespace BlazorServerApp.ViewModel;
 
 /// <summary>
 /// ViewModel for managing a list of persons.

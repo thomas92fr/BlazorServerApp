@@ -1,6 +1,6 @@
 using BlazorServerApp.Model;
 using Radzen;
-using ViewModel;
+using BlazorServerApp.ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
 

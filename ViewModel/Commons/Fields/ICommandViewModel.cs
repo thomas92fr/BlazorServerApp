@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 
-namespace ViewModel.Commons.Fields
+namespace BlazorServerApp.ViewModel.Commons.Fields
 {
     public interface ICommandViewModelBase
     {

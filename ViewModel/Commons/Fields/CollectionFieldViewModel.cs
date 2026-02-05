@@ -5,7 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
 using BlazorServerApp.Model.ViewModels;
 
-namespace ViewModel.Commons.Fields;
+namespace BlazorServerApp.ViewModel.Commons.Fields;
 
 /// <summary>
 /// FieldViewModel for managing collections of ViewModels.

@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace ViewModel.Commons.Fields
+namespace BlazorServerApp.ViewModel.Commons.Fields
 {
     public abstract partial class CommandViewModelBase : ObservableObject, ICommandViewModelBase
     {

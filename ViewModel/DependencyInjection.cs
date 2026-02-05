@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using BlazorServerApp.Model;
 
-namespace ViewModel;
+namespace BlazorServerApp.ViewModel;
 
 /// <summary>
 /// Extension methods for configuring ViewModel layer services.

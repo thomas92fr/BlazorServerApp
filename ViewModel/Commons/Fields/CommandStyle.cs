@@ -1,4 +1,4 @@
-namespace ViewModel.Commons.Fields
+namespace BlazorServerApp.ViewModel.Commons.Fields
 {
     /// <summary>
     /// Defines the visual style for command buttons.

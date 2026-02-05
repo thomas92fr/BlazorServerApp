@@ -3,9 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using BlazorServerApp.Model.UnitOfWork;
 using BlazorServerApp.Model.ViewModels;
-using ViewModel.Commons.Bases;
+using BlazorServerApp.ViewModel.Commons.Bases;
 
-namespace ViewModel;
+namespace BlazorServerApp.ViewModel;
 
 /// <summary>
 /// Main window ViewModel that manages the collection of open tabs.

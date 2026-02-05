@@ -3,7 +3,7 @@ using BlazorServerApp.Model.UnitOfWork;
 using BlazorServerApp.Model.ViewModels;
 using Microsoft.Extensions.Logging;
 
-namespace ViewModel.Commons.Bases;
+namespace BlazorServerApp.ViewModel.Commons.Bases;
 
 /// <summary>
 /// Base class for all ViewModels.

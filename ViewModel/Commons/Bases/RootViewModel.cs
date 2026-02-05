@@ -2,9 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using BlazorServerApp.Model.UnitOfWork;
 using BlazorServerApp.Model.ViewModels;
-using ViewModel.Commons.Fields;
+using BlazorServerApp.ViewModel.Commons.Fields;
 
-namespace ViewModel.Commons.Bases;
+namespace BlazorServerApp.ViewModel.Commons.Bases;
 
 /// <summary>
 /// Base class for root ViewModels that own a UnitOfWork.
