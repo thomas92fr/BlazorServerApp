@@ -1,6 +1,7 @@
 using BlazorServerApp.Model;
 using Radzen;
 using BlazorServerApp.ViewModel;
+using BlazorServerApp.ViewMCP;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,9 @@ builder.Services.AddRadzenComponents();
 
 // Add ViewModel layer (automatically includes Model layer)
 builder.Services.AddViewModels(builder.Configuration.GetConnectionString("DefaultConnection")!);
+
+// Add MCP server
+builder.Services.AddViewMcp();
 
 // Logging
 builder.Services.AddLogging();
@@ -29,6 +33,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.MapViewMcp();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

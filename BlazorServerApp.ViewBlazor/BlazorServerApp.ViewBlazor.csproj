@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\BlazorServerApp.Model\BlazorServerApp.Model.csproj" />
     <ProjectReference Include="..\BlazorServerApp.ViewModel\BlazorServerApp.ViewModel.csproj" />
+    <ProjectReference Include="..\BlazorServerApp.ViewMCP\BlazorServerApp.ViewMCP.csproj" />
   </ItemGroup>
 </Project>
