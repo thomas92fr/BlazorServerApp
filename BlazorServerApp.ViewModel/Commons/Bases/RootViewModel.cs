@@ -32,6 +32,16 @@ public partial class RootViewModel : ObservableObject, IRootViewModel
     [ObservableProperty]
     private bool _isBusy;
 
+    /// <summary>
+    /// Callback executed after Save completes successfully.
+    /// </summary>
+    public Action? OnSaved { get; set; }
+
+    /// <summary>
+    /// Callback executed after Discard completes.
+    /// </summary>
+    public Action? OnDiscarded { get; set; }
+
     public RootViewModel(IUnitOfWork unitOfWork, ILogger? logger = null)
     {
         Id = Guid.NewGuid().ToString();
@@ -119,6 +129,7 @@ public partial class RootViewModel : ObservableObject, IRootViewModel
         {
             StatusMessage = "Saved successfully.";
             _logger?.LogInformation("Successfully saved all changes for tab {Id}", Id);
+            OnSaved?.Invoke();
         }
         else
         {
@@ -143,6 +154,7 @@ public partial class RootViewModel : ObservableObject, IRootViewModel
 
         OnPropertyChanged(nameof(HasChanges));
         _logger?.LogInformation("All changes discarded for tab {Id}", Id);
+        OnDiscarded?.Invoke();
     }
 
     #endregion

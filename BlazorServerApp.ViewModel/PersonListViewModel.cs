@@ -67,6 +67,14 @@ public partial class PersonListViewModel : RootViewModel
     ) : base(unitOfWork, logger)
     {
         Title = "Persons";
+
+        OnSaved = () => Persons.Refresh();
+        OnDiscarded = () =>
+        {
+            SelectedPerson = null;
+            Persons.Refresh();
+        };
+
         Log?.LogDebug("PersonListViewModel created");
     }
 
@@ -86,36 +94,6 @@ public partial class PersonListViewModel : RootViewModel
         {
             SelectedPerson = Persons.Collection.First();
         }
-    }
-
-    #endregion
-
-    #region Overrides
-
-    /// <summary>
-    /// Override Save to refresh the collection after saving.
-    /// </summary>
-    public new List<ValidationError>? Save()
-    {
-        var errors = base.Save();
-
-        if (errors == null || !errors.Any())
-        {
-            // Reload to refresh IDs (new entities get persisted IDs)
-            Persons.Refresh();
-        }
-
-        return errors;
-    }
-
-    /// <summary>
-    /// Override Discard to clear selection and refresh the collection.
-    /// </summary>
-    public new void Discard()
-    {
-        SelectedPerson = null;
-        base.Discard();
-        Persons.Refresh();
     }
 
     #endregion

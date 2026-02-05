@@ -34,4 +34,14 @@ public interface IRootViewModel : IViewModel, IDisposable
     /// Discards all pending changes.
     /// </summary>
     void Discard();
+
+    /// <summary>
+    /// Callback executed after Save completes successfully.
+    /// </summary>
+    Action? OnSaved { get; set; }
+
+    /// <summary>
+    /// Callback executed after Discard completes.
+    /// </summary>
+    Action? OnDiscarded { get; set; }
 }
