@@ -1,0 +1,72 @@
+@using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+
+<div class="rz-mb-3">
+    <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+        <End>
+            @if (!string.IsNullOrEmpty(Field?.Hint))
+            {
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
+            }
+        </End>
+        <ChildContent>
+            <div class="rz-p-2 rz-pt-4" style="display: flex; align-items: center; gap: 1rem;">
+                <RadzenSlider TValue="int"
+                              Value="@(Field?.Value ?? 0)"
+                              ValueChanged="@OnValueChanged"
+                              Min="@(Field?.Min ?? 0)"
+                              Max="@(Field?.Max ?? 100)"
+                              Step="@((Field?.Step ?? 1).ToString())"
+                              Disabled="@(Field?.ReadOnly ?? false)"
+                              Style="flex: 1;" />
+                <RadzenText TextStyle="TextStyle.Body2" Style="min-width: 3rem; text-align: right;">
+                    @(Field?.Value ?? 0)
+                </RadzenText>
+            </div>
+        </ChildContent>
+    </RadzenFormField>
+</div>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
+
+@code {
+    [Parameter]
+    public IntegerSliderFieldViewModel? Field { get; set; }
+
+    private void OnValueChanged(int value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

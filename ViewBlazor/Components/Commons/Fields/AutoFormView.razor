@@ -135,6 +135,12 @@
             builder.AddAttribute(1, "Field", stringField);
             builder.CloseComponent();
         }
+        else if (field is IntegerSliderFieldViewModel intSliderField)
+        {
+            builder.OpenComponent<IntegerSliderFieldView>(0);
+            builder.AddAttribute(1, "Field", intSliderField);
+            builder.CloseComponent();
+        }
         else if (field is IntegerFieldViewModel intField)
         {
             builder.OpenComponent<IntegerFieldView>(0);

@@ -28,6 +28,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private IntegerFieldViewModel? _durationInDaysField;
     private DecimalFieldViewModel? _scoreField;
     private TimeSpanFieldViewModel? _workDurationField;
+    private IntegerSliderFieldViewModel? _satisfactionField;
 
     public PersonViewModel(
         Person person,
@@ -104,7 +105,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Hint = "Person's age in years",
         ColumnWidth = "80px",
         ColumnOrder = 3,
-        FormGroupHeader = "Informations personnelles",
+        FormGroupHeader = "Personal Information",
         FormGroupOrder = 2,
         ValueMustBeInTheList = false,
         ValidationRules = rules => rules
@@ -133,7 +134,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Label = "Is Teacher",
         Hint = "Check if person is a teacher",
         ColumnOrder = 4,
-        FormGroupHeader = "Informations personnelles",
+        FormGroupHeader = "Personal Information",
         FormGroupOrder = 2,
         HiddenInColumn = true
     };
@@ -149,7 +150,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Label = "Score",
         Hint = "Person's evaluation score (0-100)",
         ColumnOrder = 5,
-        FormGroupHeader = "Informations personnelles",
+        FormGroupHeader = "Personal Information",
         FormGroupOrder = 2,
         Format = "#.00",
         Step = 0.5m,
@@ -175,7 +176,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Label = "Work Duration",
         Hint = "Daily work duration",
         ColumnOrder = 6,
-        FormGroupHeader = "Informations personnelles",
+        FormGroupHeader = "Personal Information",
         FormGroupOrder = 2,
         ShowDays = false,
         ShowSeconds = false,
@@ -183,6 +184,27 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
             .LessThanOrEqualTo(TimeSpan.FromHours(24)).WithMessage("Duration cannot exceed 24 hours.")
                 .WithSeverity(Severity.Error)
             .Must(d => d <= TimeSpan.FromHours(10)).WithMessage("Working more than 10 hours is not recommended.")
+                .WithSeverity(Severity.Warning)
+    };
+
+    /// <summary>
+    /// Integer slider property demonstrating IntegerSliderFieldViewModel.
+    /// </summary>
+    public IntegerSliderFieldViewModel Satisfaction => _satisfactionField ??= new IntegerSliderFieldViewModel(
+        parent: this,
+        getValue: () => _person.Satisfaction,
+        setValue: value => _person.Satisfaction = value)
+    {
+        Label = "Satisfaction",
+        Hint = "Satisfaction level (0-100)",
+        ColumnOrder = 7,
+        FormGroupHeader = "Personal Information",
+        FormGroupOrder = 2,
+        Min = 0,
+        Max = 100,
+        Step = 5,
+        ValidationRules = rules => rules
+            .Must(s => s >= 30).WithMessage("Low satisfaction level.")
                 .WithSeverity(Severity.Warning)
     };
 
@@ -196,8 +218,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Start Date",
         Hint = "Start date and time",
-        ColumnOrder = 7,
-        FormGroupHeader = "Période",
+        ColumnOrder = 8,
+        FormGroupHeader = "Period",
         FormGroupOrder = 3,
         NotifyOnChange = new[] { nameof(DurationInDays) },
         HiddenInColumn = true
@@ -210,8 +232,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "End Date",
         Hint = "End date and time",
-        ColumnOrder = 8,
-        FormGroupHeader = "Période",
+        ColumnOrder = 9,
+        FormGroupHeader = "Period",
         FormGroupOrder = 3,
         NotifyOnChange = new[] { nameof(DurationInDays) },
         HiddenInColumn = true
@@ -230,13 +252,13 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Mentor",
         Hint = "Select a mentor",
-        ColumnOrder = 9,
-        FormGroupHeader = "Encadrement",
+        ColumnOrder = 10,
+        FormGroupHeader = "Supervision",
         FormGroupOrder = 4,
         HiddenInColumn = true,
         ValidationRules = rules => rules
             .Must(mentor => mentor?.Model != _person)
-                .WithMessage("Une personne ne peut pas être son propre mentor.")
+                .WithMessage("A person cannot be their own mentor.")
                 .WithSeverity(Severity.Error)
     };
 
@@ -251,8 +273,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Duration (Days)",
         Hint = "Calculated from Start and End dates",
-        ColumnOrder = 10,
-        FormGroupHeader = "Période",
+        ColumnOrder = 11,
+        FormGroupHeader = "Period",
         FormGroupOrder = 3,
         IsComputed = true,
         HiddenInColumn = true,

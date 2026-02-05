@@ -27,7 +27,7 @@ public partial class PersonListViewModel : RootViewModel
             parent: this,
             query: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>())
         {
-            Label = "Personnes",
+            Label = "Persons",
             AllowAdd = true,
             AllowDelete = true,
             AllowMultiSelect = true,
@@ -66,7 +66,7 @@ public partial class PersonListViewModel : RootViewModel
         ILogger<PersonListViewModel>? logger = null
     ) : base(unitOfWork, logger)
     {
-        Title = "Personnes";
+        Title = "Persons";
         Log?.LogDebug("PersonListViewModel created");
     }
 

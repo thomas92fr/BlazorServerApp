@@ -14,6 +14,7 @@ public class Person : IEntity
 
     public decimal Score { get; set; }
     public TimeSpan WorkDuration { get; set; }
+    public int Satisfaction { get; set; } = 50;
 
     public int? MentorId { get; set; }
 
