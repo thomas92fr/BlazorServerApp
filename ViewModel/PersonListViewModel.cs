@@ -11,9 +11,9 @@ namespace ViewModel;
 
 /// <summary>
 /// ViewModel for managing a list of persons.
-/// Extracts all business logic from PersonList.razor following MVVM pattern.
+/// Inherits from RootViewModel to provide Save/Discard commands and isolated UnitOfWork.
 /// </summary>
-public partial class PersonListViewModel : BaseViewModel
+public partial class PersonListViewModel : RootViewModel
 {
     #region Observable Properties
 
@@ -52,55 +52,6 @@ public partial class PersonListViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Validation errors from last save attempt.
-    /// Null or empty if save was successful.
-    /// </summary>
-    [ObservableProperty]
-    private List<ValidationError>? _validationErrors;
-
-    /// <summary>
-    /// Success message after successful save or discard operation.
-    /// </summary>
-    [ObservableProperty]
-    private string? _saveSuccessMessage;
-
-    /// <summary>
-    /// Indicates whether there are unsaved changes in the repository.
-    /// </summary>
-    [ObservableProperty]
-    private bool _hasChanges;
-
-    #endregion
-
-    #region Commands (lazy-initialized)
-
-    private CommandViewModel? _saveAllCommand;
-    private CommandViewModel? _discardChangesCommand;
-
-    /// <summary>
-    /// Command to validate and save all changes.
-    /// </summary>
-    public CommandViewModel SaveAllCommand => _saveAllCommand ??= new CommandViewModel(
-        parent: this,
-        text: "Save All",
-        hint: "Validate and save all changes to the repository",
-        execute: SaveAllInternal,
-        style: CommandStyle.Primary
-    );
-
-    /// <summary>
-    /// Command to discard all unsaved changes.
-    /// </summary>
-    public CommandViewModel DiscardChangesCommand => _discardChangesCommand ??= new CommandViewModel(
-        parent: this,
-        text: "Discard Changes",
-        hint: "Discard all unsaved changes",
-        execute: DiscardChangesInternal,
-        canExecute: () => HasChanges,
-        style: CommandStyle.Warning
-    );
-
     #endregion
 
     #region Constructor
@@ -115,6 +66,7 @@ public partial class PersonListViewModel : BaseViewModel
         ILogger<PersonListViewModel>? logger = null
     ) : base(unitOfWork, logger)
     {
+        Title = "Personnes";
         Log?.LogDebug("PersonListViewModel created");
     }
 
@@ -138,75 +90,32 @@ public partial class PersonListViewModel : BaseViewModel
 
     #endregion
 
-    #region Commands
+    #region Overrides
 
     /// <summary>
-    /// Validates and saves all changes to the repository.
-    /// Shows validation errors or success message.
-    /// Reloads persons on success to refresh IDs for new entities.
+    /// Override Save to refresh the collection after saving.
     /// </summary>
-    private void SaveAllInternal()
+    public new List<ValidationError>? Save()
     {
-        Log?.LogDebug("Attempting to save all changes");
+        var errors = base.Save();
 
-        ValidationErrors = UnitOfWork.SaveAll();
-
-        if (ValidationErrors == null || !ValidationErrors.Any())
+        if (errors == null || !errors.Any())
         {
-            SaveSuccessMessage = "All changes saved successfully!";
-            Log?.LogInformation("Successfully saved all changes");
-
             // Reload to refresh IDs (new entities get persisted IDs)
             Persons.Refresh();
         }
-        else
-        {
-            SaveSuccessMessage = null;
-            Log?.LogWarning("Save failed with {ErrorCount} validation error(s)",
-                ValidationErrors.Count);
 
-            foreach (var error in ValidationErrors)
-            {
-                Log?.LogDebug("Validation error: {Property} - {Message}",
-                    error.PropertyName, error.ErrorMessage);
-            }
-        }
+        return errors;
     }
 
     /// <summary>
-    /// Discards all unsaved changes.
-    /// Reloads persons from repository original state.
+    /// Override Discard to clear selection and refresh the collection.
     /// </summary>
-    private void DiscardChangesInternal()
+    public new void Discard()
     {
-        Log?.LogDebug("Discarding all changes");
-
-        UnitOfWork.DiscardChanges();
         SelectedPerson = null;
+        base.Discard();
         Persons.Refresh();
-
-        ValidationErrors = null;
-        SaveSuccessMessage = "Changes discarded.";
-
-        Log?.LogInformation("All changes discarded");
-    }
-
-    #endregion
-
-    #region Helper Methods
-
-    /// <summary>
-    /// Updates HasChanges property from repository.
-    /// Called after operations that might affect change state.
-    /// Notifies commands that depend on HasChanges to re-evaluate their CanExecute.
-    /// </summary>
-    private void UpdateHasChanges()
-    {
-        HasChanges = UnitOfWork.HasChanges();
-
-        // Notify commands that depend on HasChanges to re-evaluate CanExecute
-        DiscardChangesCommand.Command.NotifyCanExecuteChanged();
-        SaveAllCommand.Command.NotifyCanExecuteChanged();
     }
 
     #endregion

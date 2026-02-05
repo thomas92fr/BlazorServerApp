@@ -10,22 +10,41 @@ namespace ViewModel.Commons.Bases;
 /// Combines CommunityToolkit.Mvvm with UnitOfWork pattern.
 ///
 /// - Uses ObservableObject for INotifyPropertyChanged
-/// - UnitOfWork is Scoped (injected via constructor)
+/// - Supports both IRootViewModel (new) and IUnitOfWork (legacy) patterns
 /// - IsBusy property for async operation indicators
 /// </summary>
 public partial class BaseViewModel : ObservableObject, IViewModel
 {
+    private readonly IRootViewModel? _rootViewModel;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<BaseViewModel>? _logger;
 
     [ObservableProperty]
     private bool _isBusy;
 
+    /// <summary>
+    /// New constructor: receives IRootViewModel for full tab context access.
+    /// </summary>
+    public BaseViewModel(IRootViewModel rootViewModel, ILogger<BaseViewModel>? logger = null)
+    {
+        _rootViewModel = rootViewModel;
+        _unitOfWork = rootViewModel.UnitOfWork;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Legacy constructor: receives IUnitOfWork directly.
+    /// </summary>
     public BaseViewModel(IUnitOfWork unitOfWork, ILogger<BaseViewModel>? logger = null)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
     }
+
+    /// <summary>
+    /// The root ViewModel for this tab (null for legacy ViewModels).
+    /// </summary>
+    public IRootViewModel? RootViewModel => _rootViewModel;
 
     public IUnitOfWork UnitOfWork => _unitOfWork;
     public ILogger<BaseViewModel>? Log => _logger;

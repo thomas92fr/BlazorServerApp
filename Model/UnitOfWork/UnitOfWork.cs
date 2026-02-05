@@ -20,6 +20,7 @@ namespace Model.UnitOfWork;
 /// - Thread safety: SemaphoreSlim for async operations
 /// - Change tracking: Uses EF Core's ChangeTracker
 /// - ViewModel cache: Caches ViewModels per entity
+/// - RootViewModel: Optional reference for tab-based architecture
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
@@ -40,6 +41,9 @@ public class UnitOfWork : IUnitOfWork
 
     // Transaction management
     private IDbContextTransaction? _transaction;
+
+    // Optional reference to the root ViewModel (for tab-based architecture)
+    private IRootViewModel? _rootViewModel;
 
     public bool AllowSaveWithErrors { get; set; }
     private bool _disposed;
@@ -67,6 +71,16 @@ public class UnitOfWork : IUnitOfWork
     #region ViewModel Caching
 
     /// <summary>
+    /// Associates this UnitOfWork with a RootViewModel.
+    /// Called by RootViewModel constructor to enable IRootViewModel injection into entity ViewModels.
+    /// </summary>
+    public void SetRootViewModel(IRootViewModel rootViewModel)
+    {
+        _rootViewModel = rootViewModel;
+        _logger?.LogDebug("UnitOfWork associated with RootViewModel {Id}", rootViewModel.Id);
+    }
+
+    /// <summary>
     /// Gets the ViewModel cache for a given entity type.
     /// Uses EntityEqualityComparer for proper handling of new entities (Id=0).
     /// </summary>
@@ -84,6 +98,8 @@ public class UnitOfWork : IUnitOfWork
 
     /// <summary>
     /// Gets or creates a ViewModel for the given entity.
+    /// If a RootViewModel is set, uses it for factory creation (preferred).
+    /// Otherwise falls back to passing this UnitOfWork directly (legacy).
     /// </summary>
     public TViewModel? GetViewModel<TEntity, TViewModel>(TEntity? entity)
         where TEntity : class, IEntity
@@ -95,7 +111,12 @@ public class UnitOfWork : IUnitOfWork
         return cache.GetOrAdd(entity, e =>
         {
             var factory = GetOrCreateFactory<TEntity, TViewModel>();
-            var viewModel = factory.Create(e, this);
+
+            // Use IRootViewModel if available, otherwise fall back to IUnitOfWork
+            var viewModel = _rootViewModel != null
+                ? factory.Create(e, _rootViewModel)
+                : factory.Create(e, this);
+
             _logger?.LogDebug("Created new ViewModel for {EntityType} with Id={Id}",
                 typeof(TEntity).Name, e.Id);
             return viewModel;

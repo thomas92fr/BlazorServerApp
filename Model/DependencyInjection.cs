@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Model.Data;
-using Model.Services;
 using Model.UnitOfWork;
 
 namespace Model;
@@ -13,7 +12,7 @@ public static class DependencyInjection
 {
     /// <summary>
     /// Adds Model layer services to the dependency injection container.
-    /// Configures Entity Framework Core with SQLite, UnitOfWork, and Services.
+    /// Configures Entity Framework Core with SQLite and UnitOfWorkFactory for tab-based architecture.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="connectionString">SQLite connection string (e.g., "Data Source=App.db").</param>
@@ -21,17 +20,15 @@ public static class DependencyInjection
     public static IServiceCollection AddModel(this IServiceCollection services, string connectionString)
     {
         // Configure Entity Framework Core with SQLite
-        services.AddDbContext<ApplicationDbContext>(options =>
+        // Use AddDbContextFactory for creating isolated DbContext instances (for tab-based architecture)
+        services.AddDbContextFactory<ApplicationDbContext>(options =>
         {
             options.UseSqlite(connectionString);
             options.UseLazyLoadingProxies();
         });
 
-        // UnitOfWork is Scoped (per user circuit in Blazor)
-        services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
-
-        // Register services
-        services.AddSingleton<IWeatherForecastService, WeatherForecastService>();
+        // UnitOfWorkFactory creates isolated UnitOfWork instances for each tab/RootViewModel
+        services.AddSingleton<IUnitOfWorkFactory, UnitOfWorkFactory>();
 
         return services;
     }

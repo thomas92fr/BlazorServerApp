@@ -27,6 +27,12 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     #region ViewModel Management
 
     /// <summary>
+    /// Associates this UnitOfWork with a RootViewModel.
+    /// Called by RootViewModel constructor to enable IRootViewModel injection into entity ViewModels.
+    /// </summary>
+    void SetRootViewModel(IRootViewModel rootViewModel);
+
+    /// <summary>
     /// Gets or creates a ViewModel for the given entity.
     /// Returns null if entity is null.
     /// </summary>

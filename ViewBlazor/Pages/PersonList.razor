@@ -2,73 +2,102 @@
 @using ViewBlazor.Components.Persons
 @using ViewBlazor.Components.Commons.Fields
 @using Model.ViewModels
+@using Model.UnitOfWork
 @using ViewModel.Persons
-@inherits ViewModelPageBase<PersonListViewModel>
+@using System.ComponentModel
+@implements IDisposable
+
+@inject IUnitOfWorkFactory UnitOfWorkFactory
 
 <PageTitle>Person Management</PageTitle>
 
 <h1>Person Management</h1>
 
-<div class="mb-3">
-    <CommandView Command="@ViewModel.SaveAllCommand" />
-    <CommandView Command="@ViewModel.DiscardChangesCommand" />
-</div>
-
-@if (ViewModel.ValidationErrors != null && ViewModel.ValidationErrors.Any())
+@if (ViewModel != null)
 {
-    <div class="alert alert-danger">
-        <h5>Validation Errors:</h5>
-        @foreach (var group in ViewModel.ValidationErrors.GroupBy(e => e.ViewModel))
-        {
-            <div class="mb-2">
-                <strong>@group.Key?.ToString()</strong>
-                <ul>
-                    @foreach (var error in group)
-                    {
-                        <li>@error.PropertyName: @error.ErrorMessage</li>
-                    }
-                </ul>
-            </div>
-        }
+    <div class="mb-3">
+        <CommandView Command="@ViewModel.SaveCommand" />
+        <CommandView Command="@ViewModel.DiscardCommand" />
+    </div>
+
+    @if (ViewModel.ValidationErrors != null && ViewModel.ValidationErrors.Any())
+    {
+        <div class="alert alert-danger">
+            <h5>Validation Errors:</h5>
+            @foreach (var group in ViewModel.ValidationErrors.GroupBy(e => e.ViewModel))
+            {
+                <div class="mb-2">
+                    <strong>@group.Key?.ToString()</strong>
+                    <ul>
+                        @foreach (var error in group)
+                        {
+                            <li>@error.PropertyName: @error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ViewModel.StatusMessage))
+    {
+        <div class="alert alert-success">
+            @ViewModel.StatusMessage
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-6">
+            <CollectionFieldView T="PersonViewModel"
+                                 Field="@ViewModel.Persons"
+                                 SelectedItemChanged="@OnPersonSelected"
+                                 EmptyMessage="No persons found" />
+        </div>
+
+        <div class="col-md-6">
+            @if (ViewModel.SelectedPerson != null)
+            {
+                <PersonView ViewModel="@ViewModel.SelectedPerson" />
+            }
+            else
+            {
+                <p class="text-muted">Select a person to view details</p>
+            }
+        </div>
     </div>
 }
-
-@if (!string.IsNullOrEmpty(ViewModel.SaveSuccessMessage))
-{
-    <div class="alert alert-success">
-        @ViewModel.SaveSuccessMessage
-    </div>
-}
-
-<div class="row">
-    <div class="col-md-6">
-        <CollectionFieldView T="PersonViewModel"
-                             Field="@ViewModel.Persons"
-                             SelectedItemChanged="@OnPersonSelected"
-                             EmptyMessage="No persons found" />
-    </div>
-
-    <div class="col-md-6">
-        @if (ViewModel.SelectedPerson != null)
-        {
-            <PersonView ViewModel="@ViewModel.SelectedPerson" />
-        }
-        else
-        {
-            <p class="text-muted">Select a person to view details</p>
-        }
-    </div>
-</div>
 
 @code {
+    private PersonListViewModel? ViewModel { get; set; }
+
     protected override void OnInitialized()
     {
-        base.OnInitialized(); // CRITICAL: Subscribe to PropertyChanged events
+        // Create isolated UnitOfWork for this tab via factory
+        var unitOfWork = UnitOfWorkFactory.Create();
+        ViewModel = new PersonListViewModel(unitOfWork);
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         ViewModel.Initialize();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnPersonSelected(PersonViewModel? person)
     {
-        ViewModel.SelectedPerson = person;
+        if (ViewModel != null)
+        {
+            ViewModel.SelectedPerson = person;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            ViewModel.Dispose(); // Disposes UnitOfWork
+        }
     }
 }

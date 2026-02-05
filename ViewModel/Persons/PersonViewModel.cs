@@ -11,6 +11,7 @@ namespace ViewModel.Persons;
 /// <summary>
 /// ViewModel for Person entity.
 /// Demonstrates full FieldViewModel pattern with validation.
+/// Receives IRootViewModel for access to tab context and Save/Discard commands.
 /// </summary>
 public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
 {
@@ -28,9 +29,9 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
 
     public PersonViewModel(
         Person person,
-        IUnitOfWork unitOfWork,
+        IRootViewModel rootViewModel,
         ILogger<PersonViewModel>? logger = null
-    ) : base(unitOfWork, logger)
+    ) : base(rootViewModel, logger)
     {
         _person = person;
     }
