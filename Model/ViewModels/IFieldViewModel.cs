@@ -24,4 +24,10 @@ public interface IFieldViewModel
     /// If true, this field is not displayed in table columns.
     /// </summary>
     bool HiddenInColumn { get; set; }
+
+    /// <summary>
+    /// Display order in table columns. Lower values appear first.
+    /// Default is 0.
+    /// </summary>
+    int ColumnOrder { get; set; }
 }

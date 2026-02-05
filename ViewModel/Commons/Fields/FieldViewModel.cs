@@ -32,6 +32,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     private bool _readOnly;
     private string? _columnWidth;
     private bool _hiddenInColumn;
+    private int _columnOrder;
 
     // Computed field support
     private bool _isComputed;
@@ -187,6 +188,16 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get => _hiddenInColumn;
         set => SetProperty(ref _hiddenInColumn, value);
+    }
+
+    /// <summary>
+    /// Display order in table columns. Lower values appear first.
+    /// Default is 0.
+    /// </summary>
+    public int ColumnOrder
+    {
+        get => _columnOrder;
+        set => SetProperty(ref _columnOrder, value);
     }
 
     public bool ValueMustBeInTheList

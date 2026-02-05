@@ -30,6 +30,7 @@ public partial class PersonListViewModel : BaseViewModel
             Label = "Personnes",
             AllowAdd = true,
             AllowDelete = true,
+            AllowMultiSelect = true,
             CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
             OnItemAdded = vm => { }, // Already tracked by UnitOfWork
             OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)

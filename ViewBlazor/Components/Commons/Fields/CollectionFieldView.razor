@@ -11,12 +11,22 @@
     }
 
     @* Toolbar *@
-    @if (Field != null && (Field.AllowAdd || ShowRefresh))
+    @if (Field != null && (Field.AllowAdd || Field.AllowMultiSelect || ShowRefresh))
     {
-        <div class="mb-2">
+        <div class="mb-2 d-flex gap-1 flex-wrap">
             @if (Field.AllowAdd)
             {
-                <CommandView Command="@Field.AddCommand" CssClass="btn btn-sm btn-success me-1" />
+                <CommandView Command="@Field.AddCommand" CssClass="btn btn-sm btn-success" />
+            }
+            @if (Field.AllowMultiSelect && Field.AllowDelete && Field.SelectedCount > 0)
+            {
+                <CommandView Command="@Field.DeleteSelectedCommand" CssClass="btn btn-sm btn-danger" />
+            }
+            @if (Field.AllowMultiSelect && Field.SelectedCount > 0)
+            {
+                <button class="btn btn-sm btn-outline-secondary" @onclick="() => Field.ClearSelection()">
+                    Clear (@Field.SelectedCount)
+                </button>
             }
             @if (ShowRefresh)
             {
@@ -30,6 +40,16 @@
         <table class="table table-striped table-hover table-sm @TableCssClass">
             <thead class="table-light">
                 <tr>
+                    @if (Field?.AllowMultiSelect == true)
+                    {
+                        <th style="width: 40px;">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   checked="@IsAllSelected()"
+                                   @onchange="OnSelectAllChanged"
+                                   title="Select all" />
+                        </th>
+                    }
                     @if (Field?.ColumnFields != null)
                     {
                         @foreach (var field in Field.ColumnFields)
@@ -50,25 +70,34 @@
                 {
                     @foreach (var item in Field.Collection)
                     {
-                        var isSelected = Equals(item, Field.SelectedItem);
+                        var isSelected = Field.IsSelected(item);
                         <tr class="@(isSelected ? "table-primary" : "")"
-                            @onclick="() => SelectItem(item)"
+                            @onclick="e => OnRowClick(item, e)"
+                            @onclick:stopPropagation="false"
                             style="cursor: pointer;">
+                            @if (Field.AllowMultiSelect)
+                            {
+                                <td @onclick:stopPropagation="true">
+                                    <input type="checkbox"
+                                           class="form-check-input"
+                                           checked="@isSelected"
+                                           @onchange="() => Field.ToggleSelection(item)" />
+                                </td>
+                            }
                             @foreach (var prop in Field.ColumnProperties)
                             {
                                 var fieldVm = prop.GetValue(item) as IFieldViewModel;
-                                @if (fieldVm != null && !fieldVm.HiddenInColumn)
+                                @if (fieldVm != null)
                                 {
                                     <td>@GetFieldValue(fieldVm)</td>
                                 }
                             }
                             @if (Field.AllowDelete || ShowActions)
                             {
-                                <td>
+                                <td @onclick:stopPropagation="true">
                                     @if (Field.AllowDelete)
                                     {
                                         <button class="btn btn-sm btn-outline-danger"
-                                                @onclick:stopPropagation="true"
                                                 @onclick="() => DeleteItem(item)"
                                                 title="Delete">
                                             Delete
@@ -118,7 +147,13 @@
     @* Item Count *@
     @if (ShowCount && Field != null)
     {
-        <small class="text-muted">@Field.Count item(s)</small>
+        <small class="text-muted">
+            @Field.Count item(s)
+            @if (Field.AllowMultiSelect && Field.SelectedCount > 0)
+            {
+                <span> - @Field.SelectedCount selected</span>
+            }
+        </small>
     }
 </div>
 
@@ -150,10 +185,16 @@
     public RenderFragment<T>? RowActions { get; set; }
 
     /// <summary>
-    /// Event callback when selection changes.
+    /// Event callback when single selection changes.
     /// </summary>
     [Parameter]
     public EventCallback<T?> SelectedItemChanged { get; set; }
+
+    /// <summary>
+    /// Event callback when multi-selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<T>> SelectedItemsChanged { get; set; }
 
     protected override void OnParametersSet()
     {
@@ -176,23 +217,72 @@
 
     private void OnFieldPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Notify parent when SelectedItem changes (e.g., after Add)
+        // Notify parent when SelectedItem changes
         if (e.PropertyName == nameof(Field.SelectedItem))
         {
             SelectedItemChanged.InvokeAsync(Field?.SelectedItem);
+        }
+
+        // Notify parent when SelectedItems changes
+        if (e.PropertyName == nameof(Field.SelectedItems) || e.PropertyName == nameof(Field.SelectedCount))
+        {
+            SelectedItemsChanged.InvokeAsync(Field?.SelectedItems.ToList());
         }
 
         // Re-render when collection properties change
         InvokeAsync(StateHasChanged);
     }
 
-    private void SelectItem(T item)
+    private void OnRowClick(T item, MouseEventArgs e)
     {
-        if (Field != null)
+        if (Field == null) return;
+
+        if (Field.AllowMultiSelect)
         {
-            Field.SelectedItem = item;
+            if (e.ShiftKey)
+            {
+                // Shift+Click: range selection
+                Field.SelectRange(item);
+            }
+            else if (e.CtrlKey)
+            {
+                // Ctrl+Click: toggle selection
+                Field.ToggleSelection(item);
+            }
+            else
+            {
+                // Normal click: single selection
+                Field.Select(item);
+                SelectedItemChanged.InvokeAsync(item);
+            }
+        }
+        else
+        {
+            // Single-select mode
+            Field.Select(item);
             SelectedItemChanged.InvokeAsync(item);
         }
+    }
+
+    private void OnSelectAllChanged(ChangeEventArgs e)
+    {
+        if (Field == null) return;
+
+        var isChecked = (bool)(e.Value ?? false);
+        if (isChecked)
+        {
+            Field.SelectAll();
+        }
+        else
+        {
+            Field.ClearSelection();
+        }
+    }
+
+    private bool IsAllSelected()
+    {
+        if (Field == null || Field.Collection.Count == 0) return false;
+        return Field.SelectedCount == Field.Count;
     }
 
     private void DeleteItem(T item)
@@ -210,6 +300,7 @@
     private int GetColumnCount()
     {
         var count = Field?.ColumnFields?.Count ?? 0;
+        if (Field?.AllowMultiSelect == true) count++;
         if (Field?.AllowDelete == true || ShowActions) count++;
         return Math.Max(count, 1);
     }
