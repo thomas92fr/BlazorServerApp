@@ -40,17 +40,17 @@ Model/
 │   └── EntityConfigurations/      # IEntityTypeConfiguration<T>
 ├── Entities/                      # Domain entities (implement IEntity)
 ├── Repositories/                  # IGenericRepository<T>, GenericRepository<T>
-├── UnitOfWork/                    # IUnitOfWork, UnitOfWork
-├── ViewModels/                    # Interfaces: IFieldViewModel, IEntityViewModel, IViewModel
+├── UnitOfWork/                    # IUnitOfWork, IUnitOfWorkFactory, UnitOfWork, UnitOfWorkFactory
+├── ViewModels/                    # Interfaces: IFieldViewModel, IEntityViewModel, IViewModel, IRootViewModel
 ├── Factories/                     # IEntityViewModelFactory, DefaultEntityViewModelFactory
 └── DependencyInjection.cs
 
 ViewModel/
 ├── Commons/
-│   ├── Bases/                     # BaseViewModel
+│   ├── Bases/                     # BaseViewModel, RootViewModel
 │   └── Fields/                    # FieldViewModels, CommandViewModel
 ├── {EntityName}/                  # EntityViewModel (e.g., Persons/)
-├── {ListName}ViewModel.cs         # Page-level ViewModels
+├── {ListName}ViewModel.cs         # Page-level RootViewModels (tabs)
 └── DependencyInjection.cs
 
 ViewBlazor/
@@ -178,7 +178,66 @@ public CommandViewModel SaveCommand => _saveCommand ??= new CommandViewModel(
 
 Parameterized version: `CommandViewModel<T>` with `execute: (T param) => ...`
 
-### Unit of Work
+### RootViewModel Pattern (Multi-Tab Architecture)
+
+`RootViewModel` is the base class for tab-level ViewModels. Each tab has its own isolated `IUnitOfWork` and `DbContext`:
+
+```csharp
+public class ProductListViewModel : RootViewModel
+{
+    public ProductListViewModel(IUnitOfWork unitOfWork, ILogger? logger = null)
+        : base(unitOfWork, logger)
+    {
+        Title = "Products";
+    }
+
+    // SaveCommand and DiscardCommand are inherited from RootViewModel
+    // ValidationErrors and StatusMessage are inherited
+
+    public CollectionFieldViewModel<ProductViewModel> Products => _productsField ??= ...;
+}
+```
+
+**Features:**
+- `SaveCommand` - Validates and saves all changes
+- `DiscardCommand` - Reverts all unsaved changes (enabled only when HasChanges)
+- `ValidationErrors` - List of errors from last save attempt
+- `StatusMessage` - Success/info message
+- `HasChanges` - Tracks unsaved changes
+- `Dispose()` - Disposes the owned UnitOfWork
+
+**Creating a RootViewModel in a Blazor page:**
+```razor
+@page "/products"
+@inject IUnitOfWorkFactory UnitOfWorkFactory
+@implements IDisposable
+
+@code {
+    private ProductListViewModel? ViewModel;
+
+    protected override void OnInitialized()
+    {
+        var unitOfWork = UnitOfWorkFactory.Create();  // Isolated UnitOfWork for this tab
+        ViewModel = new ProductListViewModel(unitOfWork);
+        ViewModel.PropertyChanged += (s, e) => InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => ViewModel?.Dispose();
+}
+```
+
+### Unit of Work and Factory
+
+`IUnitOfWorkFactory` creates isolated `IUnitOfWork` instances for each tab:
+
+```csharp
+// Inject factory
+@inject IUnitOfWorkFactory UnitOfWorkFactory
+
+// Create isolated UnitOfWork for a tab
+var unitOfWork = UnitOfWorkFactory.Create();
+var viewModel = new ProductListViewModel(unitOfWork);
+```
 
 `IUnitOfWork` manages DbContext, repositories, ViewModel caching, and validation:
 
@@ -198,24 +257,44 @@ UnitOfWork.DiscardChanges();
 bool hasChanges = UnitOfWork.HasChanges();
 ```
 
-### ViewModelPageBase<T>
+**Tab Isolation:** Each `IUnitOfWork` has its own `DbContext` and ViewModel cache. Changes in one tab don't affect other tabs until saved to the database.
 
-Base class for Blazor pages that auto-injects ViewModel and subscribes to `PropertyChanged`:
+### Blazor Page Patterns
+
+**For RootViewModels (tabs with isolated data):** Create ViewModel manually via factory:
 
 ```razor
 @page "/persons"
-@inherits ViewModelPageBase<PersonListViewModel>
+@inject IUnitOfWorkFactory UnitOfWorkFactory
+@using System.ComponentModel
+@implements IDisposable
 
 @code {
+    private PersonListViewModel? ViewModel;
+
     protected override void OnInitialized()
     {
-        base.OnInitialized();  // REQUIRED: subscribes to PropertyChanged
+        var unitOfWork = UnitOfWorkFactory.Create();
+        ViewModel = new PersonListViewModel(unitOfWork);
+        ViewModel.PropertyChanged += OnPropertyChanged;
         ViewModel.Initialize();
+    }
+
+    private void OnPropertyChanged(object? s, PropertyChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (ViewModel != null)
+        {
+            ViewModel.PropertyChanged -= OnPropertyChanged;
+            ViewModel.Dispose();
+        }
     }
 }
 ```
 
-Use `ViewModelComponentBase<T>` for child components with `[Parameter] TViewModel ViewModel`.
+**For child components:** Use `ViewModelComponentBase<T>` with `[Parameter] TViewModel ViewModel`.
 
 ## Creating a New Entity
 
@@ -259,11 +338,11 @@ dotnet ef migrations add AddProduct --project ../Model/Model.csproj
 dotnet ef database update --project ../Model/Model.csproj
 ```
 
-### Step 5: ViewModel (ViewModel/Products/)
+### Step 5: EntityViewModel (ViewModel/Products/)
 
 ```csharp
 // NOTE: Factory is auto-generated by DefaultEntityViewModelFactory.
-// Only create a custom factory if you need special initialization logic.
+// EntityViewModels receive IRootViewModel for access to tab context.
 
 public class ProductViewModel : BaseViewModel, IEntityViewModel<Product>
 {
@@ -271,7 +350,8 @@ public class ProductViewModel : BaseViewModel, IEntityViewModel<Product>
     private IntegerFieldViewModel? _idField;
     private StringFieldViewModel? _nameField;
 
-    public ProductViewModel(Product product, IUnitOfWork unitOfWork) : base(unitOfWork)
+    public ProductViewModel(Product product, IRootViewModel rootViewModel, ILogger? logger = null)
+        : base(rootViewModel, logger)
     {
         _product = product;
     }
@@ -291,10 +371,27 @@ public class ProductViewModel : BaseViewModel, IEntityViewModel<Product>
 }
 ```
 
-### Step 6: Register ViewModel (ViewModel/DependencyInjection.cs)
+### Step 6: RootViewModel (ViewModel/ProductListViewModel.cs)
 
 ```csharp
-services.AddScoped<ProductListViewModel>();
+// RootViewModel for the Products tab - NOT registered in DI
+public class ProductListViewModel : RootViewModel
+{
+    public ProductListViewModel(IUnitOfWork unitOfWork, ILogger? logger = null)
+        : base(unitOfWork, logger)
+    {
+        Title = "Products";
+    }
+
+    public CollectionFieldViewModel<ProductViewModel> Products => _productsField ??=
+        new CollectionFieldViewModel<ProductViewModel>(
+            parent: this,
+            query: () => UnitOfWork.GetAllViewModels<Product, ProductViewModel>())
+        {
+            CreateItem = () => UnitOfWork.GetNewViewModel<Product, ProductViewModel>(),
+            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
+        };
+}
 ```
 
 ### Step 7: UI Components (ViewBlazor/Components/Products/)
@@ -308,11 +405,11 @@ Create `ProductView.razor` using existing field components:
 
 ### Naming
 - Entity: `Product`
-- ViewModel: `ProductViewModel`
+- EntityViewModel: `ProductViewModel` (receives `IRootViewModel` in constructor)
+- RootViewModel: `ProductListViewModel` (inherits `RootViewModel`, owns `IUnitOfWork`)
 - Factory: `ProductViewModelFactory` (optional, same namespace as ViewModel - auto-generated if not provided)
 - Configuration: `ProductConfiguration`
 - UI Component: `ProductView.razor`
-- List ViewModel: `ProductListViewModel`
 
 ### Code Patterns
 - Lazy initialization: `Property => _field ??= new FieldViewModel(...)`
@@ -323,8 +420,10 @@ Create `ProductView.razor` using existing field components:
 - Form groups: `FormGroupHeader` (group name), `FormGroupOrder` (group order)
 
 ### Dependency Injection
-- ViewModels: **Scoped** (per Blazor circuit)
-- Services: **Singleton** or **Scoped** as needed
+- `IUnitOfWorkFactory`: **Singleton** - creates isolated UnitOfWork per tab
+- `IDbContextFactory<ApplicationDbContext>`: **Singleton** - used by UnitOfWorkFactory
+- RootViewModels: **Not registered** - created manually via `new RootViewModel(unitOfWorkFactory.Create())`
+- EntityViewModels: **Not registered** - created by factory when accessing entities
 - Chain: `ViewBlazor.Program` → `ViewModel.AddViewModels()` → `Model.AddModel()`
 
 ### Database
