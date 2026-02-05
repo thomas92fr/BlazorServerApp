@@ -1,102 +1,119 @@
 @using Model.ViewModels
 @using ViewModel
+@using ViewModel.Persons
+@using ViewBlazor.Components.Home
+@using ViewBlazor.Components.Persons
+@inject DialogService DialogService
 
-<div class="tab-bar">
-    @* Home tab (always present) *@
-    <div class="tab-item @(ViewModel.IsHomeActive ? "active" : "")"
-         @onclick="@(() => ViewModel.ActivateHome())">
-        <span class="oi oi-home tab-icon"></span>
-        <span class="tab-title">Home</span>
-    </div>
+<RadzenTabs @bind-SelectedIndex="@_selectedIndex" Change="@OnTabChange" RenderMode="TabRenderMode.Client">
+    <Tabs>
+        @* Home tab (always present) *@
+        <RadzenTabsItem>
+            <Template>
+                <RadzenIcon Icon="home" class="rz-mr-1" />
+                <span>Home</span>
+            </Template>
+            <ChildContent>
+                <HomeContent />
+            </ChildContent>
+        </RadzenTabsItem>
 
-    @* Dynamic tabs *@
-    @foreach (var tab in ViewModel.Tabs)
-    {
-        <div class="tab-item @(tab == ViewModel.ActiveTab ? "active" : "") @(tab.HasChanges ? "has-changes" : "")"
-             @onclick="@(() => ViewModel.ActivateTab(tab))">
-            <span class="tab-title">@tab.Title</span>
-            @if (tab.HasChanges)
-            {
-                <span class="unsaved-indicator" title="Unsaved changes">*</span>
-            }
-            <button class="tab-close" title="Close tab"
-                    @onclick:stopPropagation="true"
-                    @onclick="@(() => RequestCloseTab(tab))">
-                <span class="oi oi-x"></span>
-            </button>
-        </div>
-    }
-</div>
-
-@* Confirmation dialog for unsaved changes *@
-@if (_tabToClose != null)
-{
-    <div class="modal-backdrop fade show"></div>
-    <div class="modal fade show" style="display: block;" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Unsaved Changes</h5>
-                    <button type="button" class="btn-close" @onclick="CancelClose"></button>
-                </div>
-                <div class="modal-body">
-                    <p>The tab "<strong>@_tabToClose.Title</strong>" has unsaved changes.</p>
-                    <p>What would you like to do?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CancelClose">Cancel</button>
-                    <button type="button" class="btn btn-warning" @onclick="DiscardAndClose">Discard Changes</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveAndClose">Save and Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+        @* Dynamic tabs *@
+        @foreach (var tab in ViewModel.Tabs)
+        {
+            <RadzenTabsItem @key="tab.Id">
+                <Template>
+                    <span class="@(tab.HasChanges ? "rz-text-italic" : "")">@tab.Title</span>
+                    @if (tab.HasChanges)
+                    {
+                        <span class="rz-color-danger rz-ml-1" title="Unsaved changes">*</span>
+                    }
+                    <RadzenButton Icon="close" Size="ButtonSize.ExtraSmall" Variant="Variant.Text"
+                                  class="rz-ml-2" title="Close tab"
+                                  Click="@(args => RequestCloseTab(tab))"
+                                  @onclick:stopPropagation="true" />
+                </Template>
+                <ChildContent>
+                    @switch (tab)
+                    {
+                        case PersonListViewModel personListVm:
+                            <PersonListContent ViewModel="@personListVm" />
+                            break;
+                        default:
+                            <RadzenAlert AlertStyle="AlertStyle.Warning" Shade="Shade.Lighter">
+                                Unknown tab type: @tab.GetType().Name
+                            </RadzenAlert>
+                            break;
+                    }
+                </ChildContent>
+            </RadzenTabsItem>
+        }
+    </Tabs>
+</RadzenTabs>
 
 @code {
     [Parameter]
     public MainWindowViewModel ViewModel { get; set; } = null!;
 
-    private IRootViewModel? _tabToClose;
+    private int _selectedIndex = 0;
 
-    private void RequestCloseTab(IRootViewModel tab)
+    protected override void OnParametersSet()
+    {
+        UpdateSelectedIndex();
+    }
+
+    private void UpdateSelectedIndex()
+    {
+        if (ViewModel.IsHomeActive)
+        {
+            _selectedIndex = 0;
+        }
+        else if (ViewModel.ActiveTab != null)
+        {
+            var index = ViewModel.Tabs.ToList().IndexOf(ViewModel.ActiveTab);
+            _selectedIndex = index + 1; // +1 because Home is at index 0
+        }
+    }
+
+    private void OnTabChange(int index)
+    {
+        if (index == 0)
+        {
+            ViewModel.ActivateHome();
+        }
+        else
+        {
+            var tabIndex = index - 1;
+            var tabs = ViewModel.Tabs.ToList();
+            if (tabIndex >= 0 && tabIndex < tabs.Count)
+            {
+                ViewModel.ActivateTab(tabs[tabIndex]);
+            }
+        }
+    }
+
+    private async Task RequestCloseTab(IRootViewModel tab)
     {
         if (tab.HasChanges)
         {
-            _tabToClose = tab;
+            var result = await DialogService.Confirm(
+                $"The tab \"{tab.Title}\" has unsaved changes. What would you like to do?",
+                "Unsaved Changes",
+                new ConfirmOptions
+                {
+                    OkButtonText = "Discard Changes",
+                    CancelButtonText = "Cancel"
+                });
+
+            if (result == true)
+            {
+                tab.Discard();
+                ViewModel.CloseTab(tab, force: true);
+            }
         }
         else
         {
             ViewModel.CloseTab(tab, force: true);
-        }
-    }
-
-    private void CancelClose()
-    {
-        _tabToClose = null;
-    }
-
-    private void DiscardAndClose()
-    {
-        if (_tabToClose != null)
-        {
-            _tabToClose.Discard();
-            ViewModel.CloseTab(_tabToClose, force: true);
-            _tabToClose = null;
-        }
-    }
-
-    private void SaveAndClose()
-    {
-        if (_tabToClose != null)
-        {
-            var errors = _tabToClose.Save();
-            if (errors == null || !errors.Any())
-            {
-                ViewModel.CloseTab(_tabToClose, force: true);
-                _tabToClose = null;
-            }
-            // If save failed, keep dialog open (user can see errors in tab)
         }
     }
 }
