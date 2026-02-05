@@ -1,19 +1,39 @@
 ﻿@inherits LayoutComponentBase
+@using ViewModel
+@using ViewBlazor.Components.Tabs
+@using System.ComponentModel
+@implements IDisposable
+@inject MainWindowViewModel MainWindowViewModel
 
 <PageTitle>ViewBlazor</PageTitle>
 
 <div class="page">
     <div class="sidebar">
-        <NavMenu />
+        <NavMenu ViewModel="@MainWindowViewModel" />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
+        <TabBar ViewModel="@MainWindowViewModel" />
 
         <article class="content px-4">
-            @Body
+            <TabContent ViewModel="@MainWindowViewModel" />
         </article>
     </main>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        MainWindowViewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        MainWindowViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+    }
+}

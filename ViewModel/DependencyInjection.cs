@@ -20,7 +20,10 @@ public static class DependencyInjection
         // Add Model layer dependencies (includes IUnitOfWorkFactory)
         services.AddModel(connectionString);
 
-        // RootViewModels (like PersonListViewModel) are created via IUnitOfWorkFactory
+        // MainWindowViewModel manages tabs - scoped to Blazor circuit
+        services.AddScoped<MainWindowViewModel>();
+
+        // RootViewModels (like PersonListViewModel) are created via MainWindowViewModel.CreateTab<T>()
         // when opening a new tab, not registered in DI
 
         return services;

@@ -1,0 +1,36 @@
+@using Model.ViewModels
+@using ViewModel
+@using ViewModel.Persons
+@using ViewBlazor.Components.Home
+@using ViewBlazor.Components.Persons
+
+@if (ViewModel.IsHomeActive)
+{
+    <HomeContent />
+}
+else if (ViewModel.ActiveTab != null)
+{
+    @* Render the appropriate content based on tab type *@
+    @switch (ViewModel.ActiveTab)
+    {
+        case PersonListViewModel personListVm:
+            <PersonListContent ViewModel="@personListVm" />
+            break;
+        default:
+            <div class="alert alert-warning">
+                Unknown tab type: @ViewModel.ActiveTab.GetType().Name
+            </div>
+            break;
+    }
+}
+else
+{
+    <div class="text-muted">
+        <p>No tab selected. Click on an item in the menu to open a new tab.</p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public MainWindowViewModel ViewModel { get; set; } = null!;
+}
