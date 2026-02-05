@@ -18,16 +18,38 @@ public partial class PersonListViewModel : BaseViewModel
     #region Observable Properties
 
     /// <summary>
-    /// List of all persons.
+    /// Collection of all persons (using CollectionFieldViewModel).
     /// </summary>
-    [ObservableProperty]
-    private List<PersonViewModel> _persons = new();
+    private CollectionFieldViewModel<PersonViewModel>? _personsField;
+
+    public CollectionFieldViewModel<PersonViewModel> Persons =>
+        _personsField ??= new CollectionFieldViewModel<PersonViewModel>(
+            parent: this,
+            query: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>())
+        {
+            Label = "Personnes",
+            AllowAdd = true,
+            AllowDelete = true,
+            CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
+            OnItemAdded = vm => { }, // Already tracked by UnitOfWork
+            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
+        };
 
     /// <summary>
     /// Currently selected person for detail view.
     /// </summary>
-    [ObservableProperty]
-    private PersonViewModel? _selectedPerson;
+    public PersonViewModel? SelectedPerson
+    {
+        get => Persons.SelectedItem;
+        set
+        {
+            if (Persons.SelectedItem != value)
+            {
+                Persons.SelectedItem = value;
+                OnPropertyChanged(nameof(SelectedPerson));
+            }
+        }
+    }
 
     /// <summary>
     /// Validation errors from last save attempt.
@@ -52,56 +74,8 @@ public partial class PersonListViewModel : BaseViewModel
 
     #region Commands (lazy-initialized)
 
-    private CommandViewModel? _loadPersonsCommand;
-    private CommandViewModel? _addPersonCommand;
-    private CommandViewModel<PersonViewModel>? _selectPersonCommand;
-    private CommandViewModel? _deletePersonCommand;
     private CommandViewModel? _saveAllCommand;
     private CommandViewModel? _discardChangesCommand;
-
-    /// <summary>
-    /// Command to load all persons from repository.
-    /// </summary>
-    public CommandViewModel LoadPersonsCommand => _loadPersonsCommand ??= new CommandViewModel(
-        parent: this,
-        text: "Load Persons",
-        hint: "Reload all persons from repository",
-        execute: LoadPersonsInternal,
-        style: CommandStyle.Info
-    );
-
-    /// <summary>
-    /// Command to create a new person.
-    /// </summary>
-    public CommandViewModel AddPersonCommand => _addPersonCommand ??= new CommandViewModel(
-        parent: this,
-        text: "Add Person",
-        hint: "Create a new person",
-        execute: AddPersonInternal,
-        style: CommandStyle.Success
-    );
-
-    /// <summary>
-    /// Command to select a person for detail view.
-    /// </summary>
-    public CommandViewModel<PersonViewModel> SelectPersonCommand => _selectPersonCommand ??= new CommandViewModel<PersonViewModel>(
-        parent: this,
-        text: "Select",
-        hint: "Select this person for detail view",
-        execute: SelectPersonInternal,
-        style: CommandStyle.Default
-    );
-
-    /// <summary>
-    /// Command to delete the currently selected person.
-    /// </summary>
-    public CommandViewModel DeletePersonCommand => _deletePersonCommand ??= new CommandViewModel(
-        parent: this,
-        text: "Delete Person",
-        hint: "Delete the currently selected person",
-        execute: DeleteSelectedPersonInternal,
-        style: CommandStyle.Danger
-    );
 
     /// <summary>
     /// Command to validate and save all changes.
@@ -153,103 +127,17 @@ public partial class PersonListViewModel : BaseViewModel
     public void Initialize()
     {
         Log?.LogInformation("Initializing PersonListViewModel");
-        LoadPersonsCommand.Command.Execute(null);
+        // Collection is lazy-loaded on first access
+        // Auto-select first person if available
+        if (Persons.Collection.Any() && SelectedPerson == null)
+        {
+            SelectedPerson = Persons.Collection.First();
+        }
     }
 
     #endregion
 
     #region Commands
-
-    /// <summary>
-    /// Loads all persons from repository.
-    /// Auto-selects first person if none is currently selected.
-    /// </summary>
-    private void LoadPersonsInternal()
-    {
-        Log?.LogDebug("Loading persons from repository");
-
-        Persons = UnitOfWork.GetAllViewModels<Person, PersonViewModel>().ToList();
-
-        // Auto-select first person if list is not empty and no person is selected
-        if (Persons.Any() && SelectedPerson == null)
-        {
-            SelectedPerson = Persons.First();
-            Log?.LogDebug("Auto-selected first person: {PersonName} (Id: {Id})",
-                SelectedPerson.Name.Value, SelectedPerson.Id.Value);
-        }
-
-        Log?.LogInformation("Loaded {Count} person(s)", Persons.Count);
-    }
-
-    /// <summary>
-    /// Creates a new person and adds it to the list.
-    /// Automatically selects the new person and clears messages.
-    /// </summary>
-    private void AddPersonInternal()
-    {
-        Log?.LogDebug("Creating new person");
-
-        var newPerson = UnitOfWork.GetNewViewModel<Person, PersonViewModel>();
-        Persons.Add(newPerson);
-        SelectedPerson = newPerson;
-
-        // Clear messages
-        ValidationErrors = null;
-        SaveSuccessMessage = null;
-
-        Log?.LogInformation("Added new person (Id: {Id})", newPerson.Id.Value);
-    }
-
-    /// <summary>
-    /// Selects a person for detail view and clears messages.
-    /// </summary>
-    /// <param name="person">Person to select.</param>
-    private void SelectPersonInternal(PersonViewModel person)
-    {
-        if (person == null)
-        {
-            Log?.LogWarning("Attempted to select null person");
-            return;
-        }
-
-        SelectedPerson = person;
-
-        // Clear messages when switching persons
-        ValidationErrors = null;
-        SaveSuccessMessage = null;
-
-        Log?.LogDebug("Selected person: {PersonName} (Id: {Id})",
-        person.Name.Value, person.Id.Value);
-    }
-
-    /// <summary>
-    /// Deletes the currently selected person.
-    /// Selects the first remaining person after deletion.
-    /// </summary>
-    private void DeleteSelectedPersonInternal()
-    {
-        if (SelectedPerson == null)
-        {
-            Log?.LogWarning("Attempted to delete null selected person");
-            return;
-        }
-
-        var personName = SelectedPerson.Name.Value;
-        var personId = SelectedPerson.Id.Value;
-
-        Log?.LogDebug("Deleting person: {PersonName} (Id: {Id})", personName, personId);
-
-        UnitOfWork.DeleteEntity(SelectedPerson.Model);
-        Persons.Remove(SelectedPerson);
-        OnPropertyChanged(nameof(Persons)); // Notify UI that collection changed
-        SelectedPerson = Persons.FirstOrDefault();
-
-        // Clear messages
-        ValidationErrors = null;
-        SaveSuccessMessage = null;
-
-        Log?.LogInformation("Deleted person: {PersonName} (Id: {Id})", personName, personId);
-    }
 
     /// <summary>
     /// Validates and saves all changes to the repository.
@@ -268,7 +156,7 @@ public partial class PersonListViewModel : BaseViewModel
             Log?.LogInformation("Successfully saved all changes");
 
             // Reload to refresh IDs (new entities get persisted IDs)
-            LoadPersonsInternal();
+            Persons.Refresh();
         }
         else
         {
@@ -293,8 +181,8 @@ public partial class PersonListViewModel : BaseViewModel
         Log?.LogDebug("Discarding all changes");
 
         UnitOfWork.DiscardChanges();
-        SelectedPerson= null;
-        LoadPersonsInternal();
+        SelectedPerson = null;
+        Persons.Refresh();
 
         ValidationErrors = null;
         SaveSuccessMessage = "Changes discarded.";

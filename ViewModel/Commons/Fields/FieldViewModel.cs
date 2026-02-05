@@ -30,6 +30,8 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     private string? _label;
     private string? _hint;
     private bool _readOnly;
+    private string? _columnWidth;
+    private bool _hiddenInColumn;
 
     // Computed field support
     private bool _isComputed;
@@ -167,6 +169,24 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get => _warning;
         private set => SetProperty(ref _warning, value);
+    }
+
+    /// <summary>
+    /// Column width for table display (CSS value: "150px", "20%", etc.). Null = auto.
+    /// </summary>
+    public string? ColumnWidth
+    {
+        get => _columnWidth;
+        set => SetProperty(ref _columnWidth, value);
+    }
+
+    /// <summary>
+    /// If true, this field is not displayed in table columns.
+    /// </summary>
+    public bool HiddenInColumn
+    {
+        get => _hiddenInColumn;
+        set => SetProperty(ref _hiddenInColumn, value);
     }
 
     public bool ValueMustBeInTheList

@@ -2,6 +2,7 @@
 @using ViewBlazor.Components.Persons
 @using ViewBlazor.Components.Commons.Fields
 @using Model.ViewModels
+@using ViewModel.Persons
 @inherits ViewModelPageBase<PersonListViewModel>
 
 <PageTitle>Person Management</PageTitle>
@@ -9,7 +10,6 @@
 <h1>Person Management</h1>
 
 <div class="mb-3">
-    <CommandView Command="@ViewModel.AddPersonCommand" />
     <CommandView Command="@ViewModel.SaveAllCommand" />
     <CommandView Command="@ViewModel.DiscardChangesCommand" />
 </div>
@@ -41,30 +41,17 @@
 }
 
 <div class="row">
-    <div class="col-md-4">
-        <h4>Person List</h4>
-        <div class="list-group">
-            @foreach (var person in ViewModel.Persons)
-            {
-                <CommandViewGeneric T="PersonViewModel"
-                                    Command="@ViewModel.SelectPersonCommand"
-                                    Parameter="@person"
-                                    ElementType="link"
-                                    CssClass="@(person == ViewModel.SelectedPerson ? "list-group-item list-group-item-action active" : "list-group-item list-group-item-action")">
-                    @person.Name.Value (@person.Id.Value)
-                </CommandViewGeneric>
-            }
-        </div>
+    <div class="col-md-6">
+        <CollectionFieldView T="PersonViewModel"
+                             Field="@ViewModel.Persons"
+                             SelectedItemChanged="@OnPersonSelected"
+                             EmptyMessage="No persons found" />
     </div>
 
-    <div class="col-md-8">
+    <div class="col-md-6">
         @if (ViewModel.SelectedPerson != null)
         {
             <PersonView ViewModel="@ViewModel.SelectedPerson" />
-
-            <div class="mt-3">
-                <CommandView Command="@ViewModel.DeletePersonCommand" />
-            </div>
         }
         else
         {
@@ -78,5 +65,10 @@
     {
         base.OnInitialized(); // CRITICAL: Subscribe to PropertyChanged events
         ViewModel.Initialize();
+    }
+
+    private void OnPersonSelected(PersonViewModel? person)
+    {
+        ViewModel.SelectedPerson = person;
     }
 }

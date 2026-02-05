@@ -47,7 +47,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Id",
         Hint = "Person ID in database",
-        ReadOnly = true
+        ReadOnly = true,
+        ColumnWidth = "60px"
     };
 
     /// <summary>
@@ -92,6 +93,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Age",
         Hint = "Person's age in years",
+        ColumnWidth = "80px",
         ValueMustBeInTheList = false,
         ValidationRules = rules => rules
             // ERRORS (block save)
@@ -117,7 +119,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         setValue: value => _person.IsTeacher = value)
     {
         Label = "Is Teacher",
-        Hint = "Check if person is a teacher"
+        Hint = "Check if person is a teacher",
+        HiddenInColumn = true
     };
 
     /// <summary>
@@ -130,7 +133,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Start Date",
         Hint = "Start date and time",
-        NotifyOnChange = new[] { nameof(DurationInDays) }
+        NotifyOnChange = new[] { nameof(DurationInDays) },
+        HiddenInColumn = true
     };
 
     public DateTimeFieldViewModel EndDateTime => _endDateTimeField ??= new DateTimeFieldViewModel(
@@ -140,7 +144,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "End Date",
         Hint = "End date and time",
-        NotifyOnChange = new[] { nameof(DurationInDays) }
+        NotifyOnChange = new[] { nameof(DurationInDays) },
+        HiddenInColumn = true
     };
 
     /// <summary>
@@ -156,6 +161,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Mentor",
         Hint = "Select a mentor",
+        HiddenInColumn = true,
         ValidationRules = rules => rules
             .Must(mentor => mentor?.Model != _person)
                 .WithMessage("Une personne ne peut pas être son propre mentor.")
@@ -173,7 +179,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Duration (Days)",
         Hint = "Calculated from Start and End dates",
-        IsComputed = true, // ReadOnly is automatically true for computed fields
+        IsComputed = true,
+        HiddenInColumn = true,
         ValidationRules = rules => rules
             .GreaterThanOrEqualTo(0)
                 .WithMessage("Duration must be positive (End date must be after Start date).")

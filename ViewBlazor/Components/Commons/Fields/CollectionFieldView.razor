@@ -1,0 +1,224 @@
+@typeparam T where T : class
+@using ViewModel.Commons.Fields
+@using Model.ViewModels
+@using System.Reflection
+@implements IDisposable
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <label class="form-label fw-bold">@Field.Label</label>
+    }
+
+    @* Toolbar *@
+    @if (Field != null && (Field.AllowAdd || ShowRefresh))
+    {
+        <div class="mb-2">
+            @if (Field.AllowAdd)
+            {
+                <CommandView Command="@Field.AddCommand" CssClass="btn btn-sm btn-success me-1" />
+            }
+            @if (ShowRefresh)
+            {
+                <CommandView Command="@Field.RefreshCommand" CssClass="btn btn-sm btn-outline-secondary" />
+            }
+        </div>
+    }
+
+    @* Table *@
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm @TableCssClass">
+            <thead class="table-light">
+                <tr>
+                    @if (Field?.ColumnFields != null)
+                    {
+                        @foreach (var field in Field.ColumnFields)
+                        {
+                            <th style="@(field.ColumnWidth != null ? $"width: {field.ColumnWidth}" : "")">
+                                @field.Label
+                            </th>
+                        }
+                    }
+                    @if (Field?.AllowDelete == true || ShowActions)
+                    {
+                        <th style="width: 100px;">Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (Field?.Collection != null && Field.Collection.Count > 0)
+                {
+                    @foreach (var item in Field.Collection)
+                    {
+                        var isSelected = Equals(item, Field.SelectedItem);
+                        <tr class="@(isSelected ? "table-primary" : "")"
+                            @onclick="() => SelectItem(item)"
+                            style="cursor: pointer;">
+                            @foreach (var prop in Field.ColumnProperties)
+                            {
+                                var fieldVm = prop.GetValue(item) as IFieldViewModel;
+                                @if (fieldVm != null && !fieldVm.HiddenInColumn)
+                                {
+                                    <td>@GetFieldValue(fieldVm)</td>
+                                }
+                            }
+                            @if (Field.AllowDelete || ShowActions)
+                            {
+                                <td>
+                                    @if (Field.AllowDelete)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => DeleteItem(item)"
+                                                title="Delete">
+                                            Delete
+                                        </button>
+                                    }
+                                    @if (RowActions != null)
+                                    {
+                                        @RowActions(item)
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="@GetColumnCount()" class="text-center text-muted py-3">
+                            @EmptyMessage
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* Validation Messages *@
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <div class="text-danger">
+            @Field.Error
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <div class="text-warning">
+            @Field.Warning
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <small class="form-text text-muted">@Field.Hint</small>
+    }
+
+    @* Item Count *@
+    @if (ShowCount && Field != null)
+    {
+        <small class="text-muted">@Field.Count item(s)</small>
+    }
+</div>
+
+@code {
+    private CollectionFieldViewModel<T>? _previousField;
+
+    [Parameter]
+    public CollectionFieldViewModel<T>? Field { get; set; }
+
+    [Parameter]
+    public string? TableCssClass { get; set; }
+
+    [Parameter]
+    public bool ShowRefresh { get; set; } = false;
+
+    [Parameter]
+    public bool ShowActions { get; set; } = false;
+
+    [Parameter]
+    public bool ShowCount { get; set; } = true;
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "No items";
+
+    /// <summary>
+    /// Optional custom actions per row.
+    /// </summary>
+    [Parameter]
+    public RenderFragment<T>? RowActions { get; set; }
+
+    /// <summary>
+    /// Event callback when selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<T?> SelectedItemChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // Subscribe to PropertyChanged when Field changes
+        if (_previousField != Field)
+        {
+            if (_previousField != null)
+            {
+                _previousField.PropertyChanged -= OnFieldPropertyChanged;
+            }
+
+            if (Field != null)
+            {
+                Field.PropertyChanged += OnFieldPropertyChanged;
+            }
+
+            _previousField = Field;
+        }
+    }
+
+    private void OnFieldPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // Notify parent when SelectedItem changes (e.g., after Add)
+        if (e.PropertyName == nameof(Field.SelectedItem))
+        {
+            SelectedItemChanged.InvokeAsync(Field?.SelectedItem);
+        }
+
+        // Re-render when collection properties change
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SelectItem(T item)
+    {
+        if (Field != null)
+        {
+            Field.SelectedItem = item;
+            SelectedItemChanged.InvokeAsync(item);
+        }
+    }
+
+    private void DeleteItem(T item)
+    {
+        Field?.DeleteCommand.Command.Execute(item);
+    }
+
+    private string GetFieldValue(IFieldViewModel field)
+    {
+        var valueProperty = field.GetType().GetProperty("Value");
+        var value = valueProperty?.GetValue(field);
+        return value?.ToString() ?? string.Empty;
+    }
+
+    private int GetColumnCount()
+    {
+        var count = Field?.ColumnFields?.Count ?? 0;
+        if (Field?.AllowDelete == true || ShowActions) count++;
+        return Math.Max(count, 1);
+    }
+
+    public void Dispose()
+    {
+        if (Field != null)
+        {
+            Field.PropertyChanged -= OnFieldPropertyChanged;
+        }
+    }
+}

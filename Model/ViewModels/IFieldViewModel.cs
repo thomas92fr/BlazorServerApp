@@ -14,4 +14,14 @@ public interface IFieldViewModel
     string? Warning { get; }
     bool HasSetValueFunction { get; }
     void Validate();
+
+    /// <summary>
+    /// Column width for table display (CSS value: "150px", "20%", etc.). Null = auto.
+    /// </summary>
+    string? ColumnWidth { get; set; }
+
+    /// <summary>
+    /// If true, this field is not displayed in table columns.
+    /// </summary>
+    bool HiddenInColumn { get; set; }
 }
