@@ -1,23 +1,27 @@
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<button type="button"
-        class="@GetButtonClass()"
-        @onclick="ExecuteCommand"
-        disabled="@IsDisabled()"
-        title="@Command?.Hint">
-    @if (Command?.IsBusy == true)
-    {
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-    }
-    @if (ChildContent != null)
-    {
+@if (ChildContent != null)
+{
+    <RadzenButton Click="ExecuteCommand"
+                  ButtonStyle="@GetButtonStyle()"
+                  Disabled="@IsDisabled()"
+                  IsBusy="@(Command?.IsBusy ?? false)"
+                  MouseEnter="@ShowTooltip"
+                  class="@CssClass">
         @ChildContent
-    }
-    else
-    {
-        @Command?.Text
-    }
-</button>
+    </RadzenButton>
+}
+else
+{
+    <RadzenButton Click="ExecuteCommand"
+                  Text="@Command?.Text"
+                  ButtonStyle="@GetButtonStyle()"
+                  Disabled="@IsDisabled()"
+                  IsBusy="@(Command?.IsBusy ?? false)"
+                  MouseEnter="@ShowTooltip"
+                  class="@CssClass" />
+}
 
 @code {
     /// <summary>
@@ -56,30 +60,31 @@
     }
 
     /// <summary>
-    /// Gets the CSS class for the button based on Command.Style or custom CssClass.
+    /// Shows tooltip with the command hint on mouse enter.
     /// </summary>
-    private string GetButtonClass()
+    private void ShowTooltip(ElementReference elementReference)
     {
-        // If custom CSS class is provided, use it
-        if (!string.IsNullOrEmpty(CssClass))
+        if (!string.IsNullOrEmpty(Command?.Hint))
         {
-            return CssClass;
+            TooltipService.Open(elementReference, Command.Hint);
         }
+    }
 
-        // Otherwise, map the CommandStyle enum to Bootstrap classes
-        var baseClass = "btn";
-        var styleClass = (Command?.Style ?? CommandStyle.Default) switch
+    /// <summary>
+    /// Gets the Radzen ButtonStyle based on Command.Style.
+    /// </summary>
+    private ButtonStyle GetButtonStyle()
+    {
+        return (Command?.Style ?? CommandStyle.Default) switch
         {
-            CommandStyle.Primary => "btn-primary",
-            CommandStyle.Success => "btn-success",
-            CommandStyle.Danger => "btn-danger",
-            CommandStyle.Warning => "btn-warning",
-            CommandStyle.Info => "btn-info",
-            CommandStyle.Light => "btn-light",
-            CommandStyle.Dark => "btn-dark",
-            _ => "btn-secondary"
+            CommandStyle.Primary => ButtonStyle.Primary,
+            CommandStyle.Success => ButtonStyle.Success,
+            CommandStyle.Danger => ButtonStyle.Danger,
+            CommandStyle.Warning => ButtonStyle.Warning,
+            CommandStyle.Info => ButtonStyle.Info,
+            CommandStyle.Light => ButtonStyle.Light,
+            CommandStyle.Dark => ButtonStyle.Dark,
+            _ => ButtonStyle.Secondary
         };
-
-        return $"{baseClass} {styleClass}";
     }
 }

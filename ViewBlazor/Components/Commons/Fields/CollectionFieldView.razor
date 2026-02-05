@@ -24,9 +24,10 @@
             }
             @if (Field.AllowMultiSelect && Field.SelectedCount > 0)
             {
-                <button class="btn btn-sm btn-outline-secondary" @onclick="() => Field.ClearSelection()">
-                    Clear (@Field.SelectedCount)
-                </button>
+                <RadzenButton Text="@($"Clear ({Field.SelectedCount})")"
+                              ButtonStyle="ButtonStyle.Light"
+                              Size="ButtonSize.Small"
+                              Click="() => Field.ClearSelection()" />
             }
             @if (ShowRefresh)
             {
@@ -97,11 +98,11 @@
                                 <td @onclick:stopPropagation="true">
                                     @if (Field.AllowDelete)
                                     {
-                                        <button class="btn btn-sm btn-outline-danger"
-                                                @onclick="() => DeleteItem(item)"
-                                                title="Delete">
-                                            Delete
-                                        </button>
+                                        <RadzenButton Text="Delete"
+                                                      ButtonStyle="ButtonStyle.Danger"
+                                                      Variant="Variant.Outlined"
+                                                      Size="ButtonSize.Small"
+                                                      Click="() => DeleteItem(item)" />
                                     }
                                     @if (RowActions != null)
                                     {
