@@ -6,6 +6,9 @@
 @inject MainWindowViewModel MainWindowViewModel
 
 <PageTitle>ViewBlazor</PageTitle>
+<HeadContent>
+    <RadzenTheme Theme="material" />
+</HeadContent>
 
 <div class="page">
     <div class="sidebar">
@@ -20,6 +23,8 @@
         </article>
     </main>
 </div>
+
+<RadzenComponents />
 
 @code {
     protected override void OnInitialized()

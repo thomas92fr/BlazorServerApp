@@ -1,4 +1,5 @@
 using Model;
+using Radzen;
 using ViewModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddRadzenComponents();
 
 // Add ViewModel layer (automatically includes Model layer)
 builder.Services.AddViewModels(builder.Configuration.GetConnectionString("DefaultConnection")!);
