@@ -1,37 +1,42 @@
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<div class="mb-3 form-check">
-    <input type="checkbox"
-           class="form-check-input @(Field?.Error != null ? "is-invalid" : "")"
-           id="@GetUniqueId()"
-           checked="@(Field?.Value ?? false)"
-           @onchange="OnValueChanged"
-           disabled="@(Field?.ReadOnly ?? false)" />
-
+<div class="rz-mb-3">
+    <RadzenCheckBox TValue="bool"
+                    Value="@(Field?.Value ?? false)"
+                    ValueChanged="@OnValueChanged"
+                    Disabled="@(Field?.ReadOnly ?? false)"
+                    Name="@_uniqueId" />
     @if (!string.IsNullOrEmpty(Field?.Label))
     {
-        <label class="form-check-label" for="@GetUniqueId()">
-            @Field.Label
-        </label>
+        <RadzenLabel Text="@Field.Label" Component="@_uniqueId" class="rz-ms-2" />
+    }
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <RadzenIcon Icon="info" class="rz-ms-1" Style="cursor: help; font-size: 1rem; color: var(--rz-text-tertiary-color); vertical-align: middle;"
+                    MouseEnter="@(args => ShowHintTooltip(args))" />
     }
 
     @if (!string.IsNullOrEmpty(Field?.Error))
     {
-        <div class="invalid-feedback d-block">
+        <RadzenAlert AlertStyle="AlertStyle.Danger"
+                     Shade="Shade.Lighter"
+                     Size="AlertSize.Small"
+                     AllowClose="false"
+                     class="rz-mt-1">
             @Field.Error
-        </div>
+        </RadzenAlert>
     }
 
     @if (!string.IsNullOrEmpty(Field?.Warning))
     {
-        <div class="text-warning">
-            ⚠️ @Field.Warning
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Hint))
-    {
-        <small class="form-text text-muted d-block">@Field.Hint</small>
+        <RadzenAlert AlertStyle="AlertStyle.Warning"
+                     Shade="Shade.Lighter"
+                     Size="AlertSize.Small"
+                     AllowClose="false"
+                     class="rz-mt-1">
+            @Field.Warning
+        </RadzenAlert>
     }
 </div>
 
@@ -44,16 +49,20 @@
 
     private string _uniqueId = Guid.NewGuid().ToString();
 
-    private string GetUniqueId() => _uniqueId;
-
-    private async Task OnValueChanged(ChangeEventArgs e)
+    private async Task OnValueChanged(bool newValue)
     {
-        var newValue = e.Value is bool boolValue ? boolValue : false;
-
         if (Field != null)
         {
             Field.Value = newValue;
             await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
         }
     }
 }

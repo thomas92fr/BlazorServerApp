@@ -1,173 +1,129 @@
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<div class="mb-3">
-    @if (!string.IsNullOrEmpty(Field?.Label))
-    {
-        <label class="form-label">@Field.Label</label>
-    }
-
-    @if (Field?.List != null && Field.ValueMustBeInTheList)
-    {
-        <!-- Strict select mode: only values from list allowed -->
-        <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
-                disabled="@(Field?.ReadOnly ?? false)"
-                value="@Field?.Value"
-                @onchange="OnSelectChanged">
-            @foreach (var item in Field!.List!)
+<div class="position-relative rz-mb-3" @onfocusin="OnFocus" @onfocusout="OnBlur">
+    <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+        <End>
+            @if (!string.IsNullOrEmpty(Field?.Hint))
             {
-                <option value="@item">@item</option>
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
             }
-        </select>
-    }
-    else if (Field?.List != null)
-    {
-        <!-- Combo mode: input with dropdown list -->
-        <div class="position-relative">
-            <input type="number"
-                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-                   value="@Field?.Value"
-                   @oninput="OnValueChangedWithFilter"
-                   @onfocus="OnInputFocus"
-                   @onblur="OnInputBlur"
-                   disabled="@(Field?.ReadOnly ?? false)"
-                   placeholder="Saisir ou choisir dans la liste" />
-            @if (_isExpanded && FilteredList.Count > 0)
+        </End>
+        <ChildContent>
+            @if (Field?.List != null && Field.ValueMustBeInTheList)
             {
-                <ul class="list-group position-absolute w-100 shadow-sm"
-                    style="z-index: 1000; max-height: 200px; overflow-y: auto;">
-                    @foreach (var item in FilteredList)
-                    {
-                        <li class="list-group-item list-group-item-action py-1"
-                            style="cursor: pointer;"
-                            @onmousedown="() => OnItemSelected(item)">
-                            @item
-                        </li>
-                    }
-                </ul>
+                @* Strict select mode: only values from list allowed *@
+                <RadzenDropDown TValue="int"
+                                Data="@Field.List"
+                                Value="@Field.Value"
+                                ValueChanged="@OnValueChanged"
+                                Disabled="@(Field?.ReadOnly ?? false)"
+                                AllowFiltering="true"
+                                Style="width: 100%;" />
             }
-        </div>
-    }
-    else
-    {
-        <!-- Input mode when no list -->
-        <div class="input-group">
-            <input type="number"
-                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-                   value="@Field?.Value"
-                   @oninput="OnValueChanged"
-                   disabled="@(Field?.ReadOnly ?? false)" />
-
-            @if (!(Field?.ReadOnly ?? false))
+            else
             {
-                <button class="btn btn-outline-secondary"
-                        type="button"
-                        @onclick="DecrementValue">
-                    -
-                </button>
-                <button class="btn btn-outline-secondary"
-                        type="button"
-                        @onclick="IncrementValue">
-                    +
-                </button>
+                @* Free input mode with built-in +/- buttons *@
+                <RadzenNumeric TValue="int"
+                               Value="@(Field?.Value ?? 0)"
+                               ValueChanged="@OnValueChanged"
+                               Disabled="@(Field?.ReadOnly ?? false)"
+                               ShowUpDown="@(!(Field?.ReadOnly ?? false))"
+                               Style="width: 100%;" />
+            }
+        </ChildContent>
+    </RadzenFormField>
+    @* Popup suggestion list - outside RadzenFormField *@
+    @if (_showSuggestions && Field?.List != null && !Field.ValueMustBeInTheList && !(Field?.ReadOnly ?? false))
+    {
+        <div class="position-absolute w-100 shadow-sm"
+             style="z-index: 1000; max-height: 200px; overflow-y: auto; background: var(--rz-base-background-color); border: 1px solid var(--rz-input-border); border-radius: var(--rz-border-radius); top: 100%;">
+            @foreach (var item in Field.List)
+            {
+                <div class="rz-p-2"
+                     style="cursor: pointer;"
+                     @onmousedown="() => SelectValue(item)"
+                     @onmouseenter="@(e => _hoveredItem = item)"
+                     @onmouseleave="@(e => _hoveredItem = null)"
+                     tabindex="-1">
+                    <RadzenText TextStyle="TextStyle.Body2"
+                                Style="@(_hoveredItem == item ? "color: var(--rz-primary);" : "")">
+                        @item
+                    </RadzenText>
+                </div>
             }
         </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Error))
-    {
-        <div class="text-danger">
-            @Field.Error
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Warning))
-    {
-        <div class="text-warning">
-            @Field.Warning
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Hint))
-    {
-        <small class="form-text text-muted">@Field.Hint</small>
     }
 </div>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
 
 @code {
     [Parameter]
     public IntegerFieldViewModel? Field { get; set; }
 
-    private bool _isExpanded;
-    private string _filterText = "";
+    private bool _showSuggestions;
+    private int? _hoveredItem;
 
-    private List<int> FilteredList
-    {
-        get
-        {
-            if (Field?.List == null) return new List<int>();
-            if (string.IsNullOrEmpty(_filterText)) return Field.List;
-            return Field.List.Where(x => x.ToString().Contains(_filterText)).ToList();
-        }
-    }
-
-    private void OnValueChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var value) && Field != null)
-        {
-            Field.Value = value;
-        }
-    }
-
-    private void OnValueChangedWithFilter(ChangeEventArgs e)
-    {
-        _filterText = e.Value?.ToString() ?? "";
-        if (int.TryParse(_filterText, out var value) && Field != null)
-        {
-            Field.Value = value;
-        }
-    }
-
-    private void OnInputFocus()
-    {
-        _isExpanded = true;
-    }
-
-    private void OnInputBlur()
-    {
-        // Petit délai pour permettre le clic sur le select
-        _ = Task.Delay(200).ContinueWith(_ =>
-        {
-            _isExpanded = false;
-            _filterText = "";
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private void OnSelectChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var value) && Field != null)
-        {
-            Field.Value = value;
-        }
-    }
-
-    private void OnItemSelected(int value)
+    private void OnValueChanged(int value)
     {
         if (Field != null)
         {
             Field.Value = value;
-            _isExpanded = false;
-            _filterText = "";
         }
     }
 
-    private void IncrementValue()
+    private void OnFocus()
     {
-        Field?.IncrementCommand.Command.Execute(null);
+        _showSuggestions = true;
     }
 
-    private void DecrementValue()
+    private void OnBlur()
     {
-        Field?.DecrementCommand.Command.Execute(null);
+        // Delay to allow click on suggestion item
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            _showSuggestions = false;
+            _hoveredItem = null;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void SelectValue(int value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+            _showSuggestions = false;
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
     }
 }

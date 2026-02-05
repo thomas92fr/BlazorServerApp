@@ -1,81 +1,72 @@
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<div class="mb-3">
-    @if (!string.IsNullOrEmpty(Field?.Label))
-    {
-        <label class="form-label">@Field.Label</label>
-    }
-
-    @if (Field?.List != null && Field.ValueMustBeInTheList)
-    {
-        <!-- Strict select mode: only values from list allowed -->
-        <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
-                disabled="@(Field?.ReadOnly ?? false)"
-                value="@Field?.Value"
-                @onchange="OnSelectChanged">
-            @foreach (var item in Field!.List!)
+<RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="rz-mb-3 w-100">
+    <End>
+        <div style="display: flex; align-items: center; height: 100%;">
+            @if (!string.IsNullOrEmpty(Field?.Hint))
             {
-                <option value="@item">@item</option>
-            }
-        </select>
-    }
-    else if (Field?.List != null)
-    {
-        <!-- Combo mode: input with dropdown list -->
-        <div class="position-relative">
-            <input type="text"
-                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-                   value="@Field?.Value"
-                   @oninput="OnValueChangedWithFilter"
-                   @onfocus="OnInputFocus"
-                   @onblur="OnInputBlur"
-                   disabled="@(Field?.ReadOnly ?? false)"
-                   placeholder="Saisir ou choisir dans la liste" />
-            @if (_isExpanded && FilteredList.Count > 0)
-            {
-                <ul class="list-group position-absolute w-100 shadow-sm"
-                    style="z-index: 1000; max-height: 200px; overflow-y: auto;">
-                    @foreach (var item in FilteredList)
-                    {
-                        <li class="list-group-item list-group-item-action py-1"
-                            style="cursor: pointer;"
-                            @onmousedown="() => OnItemSelected(item)">
-                            @item
-                        </li>
-                    }
-                </ul>
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
             }
         </div>
-    }
-    else
-    {
-        <!-- Input mode when no list -->
-        <input type="text"
-               class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-               value="@Field?.Value"
-               @oninput="OnValueChanged"
-               disabled="@(Field?.ReadOnly ?? false)" />
-    }
+    </End>
+    <ChildContent>
+        @if (Field?.List != null && Field.ValueMustBeInTheList)
+        {
+            @* Strict select mode: only values from list allowed *@
+            <RadzenDropDown TValue="string"
+                            Data="@Field.List"
+                            Value="@Field.Value"
+                            ValueChanged="@OnValueChanged"
+                            Disabled="@(Field?.ReadOnly ?? false)"
+                            AllowClear="true"
+                            AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            Style="width: 100%;" />
+        }
+        else if (Field?.List != null)
+        {
+            @* Combo mode: free input with autocomplete suggestions *@
+            <RadzenAutoComplete Data="@Field.List"
+                                Value="@Field.Value"
+                                Change="@(args => OnValueChanged(args?.ToString()))"
+                                Disabled="@(Field?.ReadOnly ?? false)"
+                                FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                Style="width: 100%;" />
+        }
+        else
+        {
+            @* Free input mode *@
+            <RadzenTextBox Value="@Field?.Value"
+                           ValueChanged="@OnValueChanged"
+                           Disabled="@(Field?.ReadOnly ?? false)"
+                           Style="width: 100%;" />
+        }
+    </ChildContent>
+</RadzenFormField>
 
-    @if (!string.IsNullOrEmpty(Field?.Error))
-    {
-        <div class="invalid-feedback d-block">
-            @Field.Error
-        </div>
-    }
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
 
-    @if (!string.IsNullOrEmpty(Field?.Warning))
-    {
-        <div class="text-warning">
-            @Field.Warning
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Hint))
-    {
-        <small class="form-text text-muted">@Field.Hint</small>
-    }
-</div>
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
 
 @code {
     [Parameter]
@@ -84,69 +75,20 @@
     [Parameter]
     public EventCallback<string> ValueChanged { get; set; }
 
-    private bool _isExpanded;
-    private string _filterText = "";
-
-    private List<string> FilteredList
-    {
-        get
-        {
-            if (Field?.List == null) return new List<string>();
-            if (string.IsNullOrEmpty(_filterText)) return Field.List;
-            return Field.List.Where(x => x?.Contains(_filterText, StringComparison.OrdinalIgnoreCase) == true).ToList();
-        }
-    }
-
-    private async Task OnValueChanged(ChangeEventArgs e)
-    {
-        var newValue = e.Value?.ToString() ?? string.Empty;
-        if (Field != null)
-        {
-            Field.Value = newValue;
-            await ValueChanged.InvokeAsync(newValue);
-        }
-    }
-
-    private async Task OnValueChangedWithFilter(ChangeEventArgs e)
-    {
-        _filterText = e.Value?.ToString() ?? "";
-        if (Field != null)
-        {
-            Field.Value = _filterText;
-            await ValueChanged.InvokeAsync(_filterText);
-        }
-    }
-
-    private void OnSelectChanged(ChangeEventArgs e)
+    private async Task OnValueChanged(string? value)
     {
         if (Field != null)
         {
-            Field.Value = e.Value?.ToString() ?? "";
+            Field.Value = value ?? string.Empty;
+            await ValueChanged.InvokeAsync(value ?? string.Empty);
         }
     }
 
-    private void OnInputFocus()
+    private void ShowHintTooltip(ElementReference elementReference)
     {
-        _isExpanded = true;
-    }
-
-    private void OnInputBlur()
-    {
-        _ = Task.Delay(200).ContinueWith(_ =>
+        if (!string.IsNullOrEmpty(Field?.Hint))
         {
-            _isExpanded = false;
-            _filterText = "";
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private void OnItemSelected(string value)
-    {
-        if (Field != null)
-        {
-            Field.Value = value;
-            _isExpanded = false;
-            _filterText = "";
+            TooltipService.Open(elementReference, Field.Hint);
         }
     }
 }

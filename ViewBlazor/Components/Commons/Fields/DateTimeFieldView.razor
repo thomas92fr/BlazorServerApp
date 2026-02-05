@@ -1,80 +1,66 @@
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<div class="mb-3">
-    @if (!string.IsNullOrEmpty(Field?.Label))
-    {
-        <label class="form-label">@Field.Label</label>
-    }
-
-    @if (Field?.List != null && Field.ValueMustBeInTheList)
-    {
-        <!-- Strict select mode: only values from list allowed -->
-        <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
-                disabled="@(Field?.ReadOnly ?? false)"
-                value="@GetDateTimeLocalValue()"
-                @onchange="OnSelectChanged">
-            @foreach (var item in Field!.List!)
+<RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="rz-mb-3 w-100">
+    <End>
+        <div style="display: flex; align-items: center; height: 100%;">
+            @if (!string.IsNullOrEmpty(Field?.Hint))
             {
-                <option value="@item.ToString("yyyy-MM-ddTHH:mm")">@item.ToString("dd/MM/yyyy HH:mm")</option>
-            }
-        </select>
-    }
-    else if (Field?.List != null)
-    {
-        <!-- Combo mode: input with dropdown list -->
-        <div class="position-relative">
-            <input type="datetime-local"
-                   class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-                   value="@GetDateTimeLocalValue()"
-                   @onchange="OnValueChanged"
-                   @onfocus="OnInputFocus"
-                   @onblur="OnInputBlur"
-                   disabled="@(Field?.ReadOnly ?? false)" />
-            @if (_isExpanded && Field!.List!.Count > 0)
-            {
-                <ul class="list-group position-absolute w-100 shadow-sm"
-                    style="z-index: 1000; max-height: 200px; overflow-y: auto;">
-                    @foreach (var item in Field.List)
-                    {
-                        <li class="list-group-item list-group-item-action py-1"
-                            style="cursor: pointer;"
-                            @onmousedown="() => OnItemSelected(item)">
-                            @item.ToString("dd/MM/yyyy HH:mm")
-                        </li>
-                    }
-                </ul>
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
             }
         </div>
-    }
-    else
-    {
-        <!-- Input mode when no list -->
-        <input type="datetime-local"
-               class="form-control @(Field?.Error != null ? "is-invalid" : "")"
-               value="@GetDateTimeLocalValue()"
-               @onchange="OnValueChanged"
-               disabled="@(Field?.ReadOnly ?? false)" />
-    }
+    </End>
+    <ChildContent>
+        @if (Field?.List != null && Field.ValueMustBeInTheList)
+        {
+            @* Strict select mode: only values from list allowed *@
+            <RadzenDropDown TValue="DateTime"
+                            Data="@Field.List"
+                            Value="@Field.Value"
+                            ValueChanged="@OnDropDownValueChanged"
+                            Disabled="@(Field?.ReadOnly ?? false)"
+                            Style="width: 100%;">
+                <Template Context="item">
+                    @item.ToString("dd/MM/yyyy HH:mm")
+                </Template>
+            </RadzenDropDown>
+        }
+        else
+        {
+            @* Free input mode with date picker *@
+            <RadzenDatePicker TValue="DateTime"
+                              Value="@(Field?.Value ?? DateTime.Now)"
+                              ValueChanged="@OnDatePickerValueChanged"
+                              ShowTime="true"
+                              DateFormat="dd/MM/yyyy HH:mm"
+                              Disabled="@(Field?.ReadOnly ?? false)"
+                              Style="width: 100%;" />
+        }
+    </ChildContent>
+</RadzenFormField>
 
-    @if (!string.IsNullOrEmpty(Field?.Error))
-    {
-        <div class="invalid-feedback d-block">
-            @Field.Error
-        </div>
-    }
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
 
-    @if (!string.IsNullOrEmpty(Field?.Warning))
-    {
-        <div class="text-warning">
-            @Field.Warning
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(Field?.Hint))
-    {
-        <small class="form-text text-muted">@Field.Hint</small>
-    }
-</div>
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
 
 @code {
     [Parameter]
@@ -83,53 +69,29 @@
     [Parameter]
     public EventCallback<DateTime> ValueChanged { get; set; }
 
-    private bool _isExpanded;
-
-    private string GetDateTimeLocalValue()
-    {
-        return Field?.Value.ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
-    }
-
-    private async Task OnValueChanged(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        if (!string.IsNullOrWhiteSpace(value) && DateTime.TryParse(value, out var dateTime) && Field != null)
-        {
-            Field.Value = dateTime;
-            await ValueChanged.InvokeAsync(dateTime);
-        }
-    }
-
-    private void OnSelectChanged(ChangeEventArgs e)
-    {
-        var value = e.Value?.ToString();
-        if (!string.IsNullOrWhiteSpace(value) && DateTime.TryParse(value, out var dateTime) && Field != null)
-        {
-            Field.Value = dateTime;
-        }
-    }
-
-    private void OnInputFocus()
-    {
-        _isExpanded = true;
-    }
-
-    private void OnInputBlur()
-    {
-        _ = Task.Delay(200).ContinueWith(_ =>
-        {
-            _isExpanded = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private async void OnItemSelected(DateTime value)
+    private async Task OnDropDownValueChanged(DateTime value)
     {
         if (Field != null)
         {
             Field.Value = value;
-            _isExpanded = false;
             await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private async Task OnDatePickerValueChanged(DateTime value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
         }
     }
 }

@@ -1,74 +1,79 @@
 @typeparam T where T : class
 @using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
 
-<div class="mb-3">
-    @if (!string.IsNullOrEmpty(Field?.Label))
-    {
-        <label class="form-label">@Field.Label</label>
-    }
-
-    <select class="form-select @(Field?.Error != null ? "is-invalid" : "")"
-            disabled="@(Field?.ReadOnly ?? false)"
-            value="@SelectedValue"
-            @onchange="OnValueChanged">
-        <option value="">---</option>
-        @if (Field?.List != null)
-        {
-            for (int i = 0; i < Field.List.Count; i++)
+<RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="rz-mb-3 w-100">
+    <End>
+        <div style="display: flex; align-items: center; height: 100%;">
+            @if (!string.IsNullOrEmpty(Field?.Hint))
             {
-                <option value="@i">@Field.GetDisplayText(Field.List[i])</option>
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
             }
-        }
-    </select>
-
-    @if (!string.IsNullOrEmpty(Field?.Error))
-    {
-        <div class="invalid-feedback d-block">
-            @Field.Error
         </div>
-    }
+    </End>
+    <ChildContent>
+        <RadzenDropDown TValue="T"
+                        Data="@Field?.List"
+                        Value="@Field?.Value"
+                        ValueChanged="@OnValueChanged"
+                        Disabled="@(Field?.ReadOnly ?? false)"
+                        AllowClear="true"
+                        AllowFiltering="true"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        Style="width: 100%;">
+            <Template Context="item">
+                @GetDisplayText(item)
+            </Template>
+        </RadzenDropDown>
+    </ChildContent>
+</RadzenFormField>
 
-    @if (!string.IsNullOrEmpty(Field?.Warning))
-    {
-        <div class="text-warning">
-            ⚠️ @Field.Warning
-        </div>
-    }
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
 
-    @if (!string.IsNullOrEmpty(Field?.Hint))
-    {
-        <small class="form-text text-muted">@Field.Hint</small>
-    }
-</div>
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
 
 @code {
     [Parameter]
     public ReferenceFieldViewModel<T>? Field { get; set; }
 
-    private string SelectedValue
+    private void OnValueChanged(T? value)
     {
-        get
+        if (Field != null)
         {
-            if (Field?.Value == null || Field?.List == null) return "";
-            var index = Field.List.IndexOf(Field.Value);
-            return index >= 0 ? index.ToString() : "";
+            Field.Value = value;
         }
     }
 
-    private void OnValueChanged(ChangeEventArgs e)
+    private string GetDisplayText(T? item)
     {
-        if (Field == null) return;
+        if (item == null || Field == null) return string.Empty;
+        return Field.GetDisplayText(item);
+    }
 
-        if (int.TryParse(e.Value?.ToString(), out var index)
-            && Field.List != null
-            && index >= 0
-            && index < Field.List.Count)
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
         {
-            Field.Value = Field.List[index];
-        }
-        else
-        {
-            Field.Value = default;
+            TooltipService.Open(elementReference, Field.Hint);
         }
     }
 }
