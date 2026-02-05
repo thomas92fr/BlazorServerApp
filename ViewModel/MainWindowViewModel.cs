@@ -114,7 +114,6 @@ public partial class MainWindowViewModel : ObservableObject, IDisposable
         var wasActive = ActiveTab == tab;
 
         Tabs.Remove(tab);
-        tab.Dispose(); // Disposes UnitOfWork
 
         _logger?.LogInformation("Closed tab: {Title} (Id: {Id})", tab.Title, tab.Id);
 

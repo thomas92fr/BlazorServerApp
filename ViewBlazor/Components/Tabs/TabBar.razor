@@ -97,23 +97,27 @@
         if (tab.HasChanges)
         {
             var result = await DialogService.Confirm(
-                $"The tab \"{tab.Title}\" has unsaved changes. What would you like to do?",
+                $"The tab \"{tab.Title}\" has unsaved changes. Do you want to close without saving?",
                 "Unsaved Changes",
                 new ConfirmOptions
                 {
-                    OkButtonText = "Discard Changes",
+                    OkButtonText = "Discard and Close",
                     CancelButtonText = "Cancel"
                 });
 
-            if (result == true)
+            if (result != true)
             {
-                tab.Discard();
-                ViewModel.CloseTab(tab, force: true);
+                return;
             }
         }
-        else
-        {
-            ViewModel.CloseTab(tab, force: true);
-        }
+
+        // Remove tab from collection (does not dispose yet)
+        ViewModel.CloseTab(tab, force: true);
+
+        // Wait for UI to update (tab removed from RadzenTabs)
+        await InvokeAsync(StateHasChanged);
+
+        // Now safe to dispose
+        tab.Dispose();
     }
 }
