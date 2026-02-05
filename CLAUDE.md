@@ -29,7 +29,7 @@ ViewBlazor (UI) → ViewModel → Model (Data)
 
 - **Model**: Entity Framework Core 10.0 with SQLite, Unit of Work pattern, repositories
 - **ViewModel**: MVVM with CommunityToolkit.Mvvm, FluentValidation for validation
-- **ViewBlazor**: Blazor Server components and pages
+- **ViewBlazor**: Blazor Server components with Radzen Blazor UI framework
 
 ### Project Structure
 
@@ -57,8 +57,13 @@ ViewBlazor/
 ├── Components/
 │   ├── Base/                      # ViewModelPageBase<T>, ViewModelComponentBase<T>
 │   ├── Commons/Fields/            # StringFieldView, IntegerFieldView, etc.
+│   ├── Tabs/                      # TabBar.razor (RadzenTabs)
 │   └── {EntityName}/              # EntityView.razor
+├── Shared/
+│   ├── MainLayout.razor           # RadzenLayout with collapsible sidebar
+│   └── NavMenu.razor              # RadzenPanelMenu navigation
 ├── Pages/                         # Routable pages (@page)
+├── _Imports.razor                 # Global imports (includes Radzen, Radzen.Blazor)
 └── Program.cs
 ```
 
@@ -72,8 +77,11 @@ All entity properties are wrapped in typed FieldViewModels:
 |------|-------|
 | `StringFieldViewModel` | Text properties |
 | `IntegerFieldViewModel` | Numbers (includes +/- commands) |
+| `IntegerSliderFieldViewModel` | Sliders (Min, Max, Step) |
+| `DecimalFieldViewModel` | Decimal numbers (Format, Step, Min, Max, +/- commands) |
 | `BoolFieldViewModel` | Checkboxes |
 | `DateTimeFieldViewModel` | Date/time pickers |
+| `TimeSpanFieldViewModel` | Duration pickers (ShowDays, ShowSeconds, Inline) |
 | `ReferenceFieldViewModel<T>` | Entity references (dropdowns) |
 | `CollectionFieldViewModel<T>` | Collections (table view with CRUD) |
 
@@ -99,6 +107,49 @@ public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(
         .NotEmpty().WithMessage("Required.").WithSeverity(Severity.Error)
         .MaximumLength(100).WithMessage("Too long.").WithSeverity(Severity.Error)
         .Must(n => n?.Length >= 2).WithMessage("Short name.").WithSeverity(Severity.Warning)
+};
+```
+
+**DecimalFieldViewModel Example:**
+```csharp
+public DecimalFieldViewModel Score => _scoreField ??= new DecimalFieldViewModel(
+    parent: this,
+    getValue: () => _entity.Score,
+    setValue: value => _entity.Score = value)
+{
+    Label = "Score",
+    Format = "#.00",    // RadzenNumeric format
+    Step = 0.1m,
+    Min = 0m,
+    Max = 100m
+};
+```
+
+**IntegerSliderFieldViewModel Example:**
+```csharp
+public IntegerSliderFieldViewModel Satisfaction => _satisfactionField ??= new IntegerSliderFieldViewModel(
+    parent: this,
+    getValue: () => _entity.Satisfaction,
+    setValue: value => _entity.Satisfaction = value)
+{
+    Label = "Satisfaction",
+    Min = 0,
+    Max = 100,
+    Step = 5
+};
+```
+
+**TimeSpanFieldViewModel Example:**
+```csharp
+public TimeSpanFieldViewModel WorkDuration => _workDurationField ??= new TimeSpanFieldViewModel(
+    parent: this,
+    getValue: () => _entity.WorkDuration,
+    setValue: value => _entity.WorkDuration = value)
+{
+    Label = "Work Duration",
+    ShowDays = true,
+    ShowSeconds = false,
+    Placeholder = "Select duration"
 };
 ```
 
@@ -150,12 +201,12 @@ Automatically generates a form from any ViewModel by discovering IFieldViewModel
 - `RespectHiddenInColumn` - If true, honors `HiddenInColumn` property (default: false)
 
 **Form Grouping:**
-Fields are grouped using `FormGroupHeader` and ordered by `FormGroupOrder`:
+Fields are grouped using `FormGroupHeader` and ordered by `FormGroupOrder`. Groups are rendered in `RadzenCard`:
 ```csharp
 public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(...)
 {
     Label = "Name",
-    FormGroupHeader = "Identification",  // Group name
+    FormGroupHeader = "Identification",  // Group name → wrapped in RadzenCard
     FormGroupOrder = 1,                   // Group display order
     ColumnOrder = 2                       // Field order within group
 };
@@ -172,7 +223,7 @@ public CommandViewModel SaveCommand => _saveCommand ??= new CommandViewModel(
     hint: "Save all changes",
     execute: SaveInternal,           // or executeAsync: SaveAsync
     canExecute: () => HasChanges,    // optional conditional enable
-    style: CommandStyle.Primary      // Default, Primary, Success, Danger, Warning, Info
+    style: CommandStyle.Primary      // Default, Primary, Success, Danger, Warning, Info, Light, Dark
 );
 ```
 
@@ -431,16 +482,71 @@ Create `ProductView.razor` using existing field components:
 - Auto-migration on startup via `MigrateDatabaseAsync()`
 - Lazy-loading proxies enabled
 
+## UI Framework
+
+The application uses **Radzen Blazor** as the UI component library (no Bootstrap).
+
+### Setup in Program.cs
+```csharp
+builder.Services.AddRadzenComponents();
+```
+
+### MainLayout Structure
+```razor
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenSidebarToggle />
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
+        <NavMenu />  <!-- Uses RadzenPanelMenu -->
+    </RadzenSidebar>
+    <RadzenBody>
+        <TabBar />  <!-- Uses RadzenTabs -->
+    </RadzenBody>
+</RadzenLayout>
+<RadzenComponents />  <!-- Required for tooltips, dialogs -->
+```
+
+### Theme
+```razor
+<RadzenTheme Theme="material" />
+```
+
+### Common Radzen Services
+- `TooltipService` - For field hints via `TooltipService.Open()`
+- `DialogService` - For confirmation dialogs via `DialogService.Confirm()`
+
 ## UI Components Reference
 
-| Component | FieldViewModel | Usage |
-|-----------|----------------|-------|
-| `StringFieldView` | `StringFieldViewModel` | Text input or dropdown |
-| `IntegerFieldView` | `IntegerFieldViewModel` | Number input with +/- buttons |
-| `BoolFieldView` | `BoolFieldViewModel` | Checkbox |
-| `DateTimeFieldView` | `DateTimeFieldViewModel` | Date/time picker |
-| `ReferenceFieldView` | `ReferenceFieldViewModel<T>` | Entity dropdown |
-| `CollectionFieldView` | `CollectionFieldViewModel<T>` | Table with CRUD, selection |
-| `AutoFormView` | Any ViewModel | Auto-generated form |
-| `CommandView` | `CommandViewModel` | Button |
-| `CommandViewGeneric` | `CommandViewModel<T>` | Button with parameter |
+| Component | FieldViewModel | Radzen Component |
+|-----------|----------------|------------------|
+| `StringFieldView` | `StringFieldViewModel` | RadzenTextBox, RadzenDropDown, RadzenAutoComplete |
+| `IntegerFieldView` | `IntegerFieldViewModel` | RadzenNumeric |
+| `IntegerSliderFieldView` | `IntegerSliderFieldViewModel` | RadzenSlider |
+| `DecimalFieldView` | `DecimalFieldViewModel` | RadzenNumeric, RadzenDropDown |
+| `BoolFieldView` | `BoolFieldViewModel` | RadzenCheckBox |
+| `DateTimeFieldView` | `DateTimeFieldViewModel` | RadzenDatePicker |
+| `TimeSpanFieldView` | `TimeSpanFieldViewModel` | RadzenTimeSpanPicker |
+| `ReferenceFieldView` | `ReferenceFieldViewModel<T>` | RadzenDropDown |
+| `CollectionFieldView` | `CollectionFieldViewModel<T>` | RadzenDataGrid |
+| `AutoFormView` | Any ViewModel | RadzenCard (groups), RadzenStack |
+| `CommandView` | `CommandViewModel` | RadzenButton |
+| `CommandViewGeneric` | `CommandViewModel<T>` | RadzenButton |
+
+### Field View Pattern (Radzen)
+All field views use `RadzenFormField` with `Variant.Outlined`:
+```razor
+<RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+    <End>
+        <RadzenIcon Icon="info" MouseEnter="@ShowHintTooltip" />
+    </End>
+    <ChildContent>
+        <RadzenTextBox ... />
+    </ChildContent>
+</RadzenFormField>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" ... />
+}
+```
