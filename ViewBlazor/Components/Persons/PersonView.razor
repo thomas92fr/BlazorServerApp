@@ -2,14 +2,10 @@
 @using ViewBlazor.Components.Commons.Fields
 @inherits ViewModelComponentBase<PersonViewModel>
 
-<div class="card">
-    <div class="card-header">
-        <h5>Person Details</h5>
-    </div>
-    <div class="card-body">
-        <AutoFormView ViewModel="@ViewModel" />
-    </div>
-</div>
+<RadzenCard Variant="Variant.Outlined">
+    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-4"><strong>Person Details</strong></RadzenText>
+    <AutoFormView ViewModel="@ViewModel" />
+</RadzenCard>
 
 @code {
     // ViewModel is inherited from ViewModelComponentBase<PersonViewModel>
