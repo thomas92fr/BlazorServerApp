@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Data.EntityConfigurations;
+namespace BlazorServerApp.Model.Data.EntityConfigurations;
 
 /// <summary>
 /// EF Core configuration for Person entity.

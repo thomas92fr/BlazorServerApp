@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
-using Model.ViewModels;
-using Model.Entities;
+using BlazorServerApp.Model.ViewModels;
+using BlazorServerApp.Model.Entities;
 using ViewModel.Commons.Bases;
 
 namespace ViewModel.Commons.Fields;

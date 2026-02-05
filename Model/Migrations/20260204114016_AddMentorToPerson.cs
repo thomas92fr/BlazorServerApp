@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Model.Migrations
+namespace BlazorServerApp.Model.Migrations
 {
     /// <inheritdoc />
     public partial class AddMentorToPerson : Migration

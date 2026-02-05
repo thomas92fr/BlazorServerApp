@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Model.Data;
+using BlazorServerApp.Model.Data;
 
 #nullable disable
 
-namespace Model.Migrations
+namespace BlazorServerApp.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260204114016_AddMentorToPerson")]
@@ -20,7 +20,7 @@ namespace Model.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
 
-            modelBuilder.Entity("Model.Entities.Person", b =>
+            modelBuilder.Entity("BlazorServerApp.Model.Entities.Person", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,7 +53,7 @@ namespace Model.Migrations
                     b.ToTable("Persons");
                 });
 
-            modelBuilder.Entity("Model.WeatherForecast", b =>
+            modelBuilder.Entity("BlazorServerApp.Model.WeatherForecast", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -74,9 +74,9 @@ namespace Model.Migrations
                     b.ToTable("WeatherForecasts");
                 });
 
-            modelBuilder.Entity("Model.Entities.Person", b =>
+            modelBuilder.Entity("BlazorServerApp.Model.Entities.Person", b =>
                 {
-                    b.HasOne("Model.Entities.Person", "Mentor")
+                    b.HasOne("BlazorServerApp.Model.Entities.Person", "Mentor")
                         .WithMany()
                         .HasForeignKey("MentorId");
 

@@ -1,8 +1,8 @@
 using FluentValidation;
-using Model.UnitOfWork;
-using Model.ViewModels;
+using BlazorServerApp.Model.UnitOfWork;
+using BlazorServerApp.Model.ViewModels;
 using Microsoft.Extensions.Logging;
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 using ViewModel.Commons.Bases;
 using ViewModel.Commons.Fields;
 

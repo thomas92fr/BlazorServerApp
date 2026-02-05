@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Model.UnitOfWork;
-using Model.ViewModels;
+using BlazorServerApp.Model.UnitOfWork;
+using BlazorServerApp.Model.ViewModels;
 using Microsoft.Extensions.Logging;
 
 namespace ViewModel.Commons.Bases;

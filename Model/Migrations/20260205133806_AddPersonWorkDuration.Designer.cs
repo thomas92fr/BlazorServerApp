@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Model.Data;
+using BlazorServerApp.Model.Data;
 
 #nullable disable
 
-namespace Model.Migrations
+namespace BlazorServerApp.Model.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260205133806_AddPersonWorkDuration")]
@@ -24,7 +24,7 @@ namespace Model.Migrations
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
 
-            modelBuilder.Entity("Model.Entities.Person", b =>
+            modelBuilder.Entity("BlazorServerApp.Model.Entities.Person", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -63,9 +63,9 @@ namespace Model.Migrations
                     b.ToTable("Persons");
                 });
 
-            modelBuilder.Entity("Model.Entities.Person", b =>
+            modelBuilder.Entity("BlazorServerApp.Model.Entities.Person", b =>
                 {
-                    b.HasOne("Model.Entities.Person", "Mentor")
+                    b.HasOne("BlazorServerApp.Model.Entities.Person", "Mentor")
                         .WithMany()
                         .HasForeignKey("MentorId");
 

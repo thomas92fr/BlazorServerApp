@@ -1,8 +1,8 @@
-using Model.UnitOfWork;
-using Model.ViewModels;
-using Model.Entities;
+using BlazorServerApp.Model.UnitOfWork;
+using BlazorServerApp.Model.ViewModels;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Factories;
+namespace BlazorServerApp.Model.Factories;
 
 /// <summary>
 /// Factory interface for creating ViewModels from entities.

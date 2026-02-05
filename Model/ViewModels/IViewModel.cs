@@ -1,6 +1,6 @@
-using Model.UnitOfWork;
+using BlazorServerApp.Model.UnitOfWork;
 
-namespace Model.ViewModels;
+namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Base interface for all ViewModels.

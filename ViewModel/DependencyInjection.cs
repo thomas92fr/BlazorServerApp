@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Model;
+using BlazorServerApp.Model;
 
 namespace ViewModel;
 

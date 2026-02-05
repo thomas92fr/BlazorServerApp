@@ -1,4 +1,4 @@
-namespace Model.ViewModels;
+namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Represents a validation error from SaveAll().

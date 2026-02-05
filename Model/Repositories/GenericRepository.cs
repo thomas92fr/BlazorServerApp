@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Model.Data;
-using Model.Entities;
+using BlazorServerApp.Model.Data;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Repositories;
+namespace BlazorServerApp.Model.Repositories;
 
 /// <summary>
 /// Generic repository implementation using Entity Framework Core.

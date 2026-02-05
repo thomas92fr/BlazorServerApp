@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Model.Data;
+using BlazorServerApp.Model.Data;
 
-namespace Model.UnitOfWork;
+namespace BlazorServerApp.Model.UnitOfWork;
 
 /// <summary>
 /// Factory for creating UnitOfWork instances with isolated DbContext.

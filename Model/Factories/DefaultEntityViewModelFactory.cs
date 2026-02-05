@@ -1,9 +1,9 @@
 using System.Reflection;
-using Model.Entities;
-using Model.UnitOfWork;
-using Model.ViewModels;
+using BlazorServerApp.Model.Entities;
+using BlazorServerApp.Model.UnitOfWork;
+using BlazorServerApp.Model.ViewModels;
 
-namespace Model.Factories;
+namespace BlazorServerApp.Model.Factories;
 
 /// <summary>
 /// Generic default factory that creates ViewModels using reflection.

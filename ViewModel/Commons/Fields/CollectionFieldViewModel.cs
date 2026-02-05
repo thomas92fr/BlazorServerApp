@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentValidation;
-using Model.ViewModels;
+using BlazorServerApp.Model.ViewModels;
 
 namespace ViewModel.Commons.Fields;
 

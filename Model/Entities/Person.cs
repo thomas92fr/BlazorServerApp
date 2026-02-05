@@ -1,4 +1,4 @@
-namespace Model.Entities;
+namespace BlazorServerApp.Model.Entities;
 
 /// <summary>
 /// Sample entity demonstrating the MVVM pattern.

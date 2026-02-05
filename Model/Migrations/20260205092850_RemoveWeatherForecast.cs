@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Model.Migrations
+namespace BlazorServerApp.Model.Migrations
 {
     /// <inheritdoc />
     public partial class RemoveWeatherForecast : Migration

@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
-using Model.UnitOfWork;
-using Model.ViewModels;
+using BlazorServerApp.Model.UnitOfWork;
+using BlazorServerApp.Model.ViewModels;
 using ViewModel.Commons.Bases;
 
 namespace ViewModel;

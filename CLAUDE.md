@@ -15,8 +15,8 @@ dotnet run --project ViewBlazor/ViewBlazor.csproj
 dotnet watch --project ViewBlazor/ViewBlazor.csproj
 
 # EF Core migrations (run from ViewBlazor directory for startup project context)
-dotnet ef migrations add <MigrationName> --project ../Model/Model.csproj
-dotnet ef database update --project ../Model/Model.csproj
+dotnet ef migrations add <MigrationName> --project ../Model/BlazorServerApp.Model.csproj
+dotnet ef database update --project ../Model/BlazorServerApp.Model.csproj
 ```
 
 ## Architecture
@@ -385,8 +385,8 @@ public DbSet<Product> Products { get; set; } = null!;
 ### Step 4: Migration
 
 ```bash
-dotnet ef migrations add AddProduct --project ../Model/Model.csproj
-dotnet ef database update --project ../Model/Model.csproj
+dotnet ef migrations add AddProduct --project ../Model/BlazorServerApp.Model.csproj
+dotnet ef database update --project ../Model/BlazorServerApp.Model.csproj
 ```
 
 ### Step 5: EntityViewModel (ViewModel/Products/)

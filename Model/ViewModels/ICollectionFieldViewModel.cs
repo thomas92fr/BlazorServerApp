@@ -1,4 +1,4 @@
-namespace Model.ViewModels;
+namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Interface for collection-level FieldViewModels.

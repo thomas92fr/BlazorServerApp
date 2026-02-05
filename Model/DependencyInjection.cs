@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Model.Data;
-using Model.UnitOfWork;
+using BlazorServerApp.Model.Data;
+using BlazorServerApp.Model.UnitOfWork;
 
-namespace Model;
+namespace BlazorServerApp.Model;
 
 /// <summary>
 /// Extension methods for configuring Model layer services.

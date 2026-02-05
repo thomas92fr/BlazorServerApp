@@ -1,4 +1,4 @@
-using Model;
+using BlazorServerApp.Model;
 using Radzen;
 using ViewModel;
 

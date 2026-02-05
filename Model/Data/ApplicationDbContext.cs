@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Data;
+namespace BlazorServerApp.Model.Data;
 
 /// <summary>
 /// Entity Framework Core DbContext for the application.

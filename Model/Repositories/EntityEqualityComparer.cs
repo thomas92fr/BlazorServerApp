@@ -1,6 +1,6 @@
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Repositories;
+namespace BlazorServerApp.Model.Repositories;
 
 /// <summary>
 /// Comparator for entities in cache.

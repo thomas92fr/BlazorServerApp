@@ -1,4 +1,4 @@
-namespace Model.UnitOfWork;
+namespace BlazorServerApp.Model.UnitOfWork;
 
 /// <summary>
 /// Factory for creating UnitOfWork instances.

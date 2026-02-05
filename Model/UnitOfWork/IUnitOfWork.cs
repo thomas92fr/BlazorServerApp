@@ -1,8 +1,8 @@
-using Model.Entities;
-using Model.Repositories;
-using Model.ViewModels;
+using BlazorServerApp.Model.Entities;
+using BlazorServerApp.Model.Repositories;
+using BlazorServerApp.Model.ViewModels;
 
-namespace Model.UnitOfWork;
+namespace BlazorServerApp.Model.UnitOfWork;
 
 /// <summary>
 /// Unit of Work interface that combines:

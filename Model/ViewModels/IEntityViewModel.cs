@@ -1,6 +1,6 @@
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.ViewModels;
+namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Interface for ViewModels bound to entities.

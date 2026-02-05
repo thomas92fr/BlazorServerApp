@@ -1,6 +1,6 @@
-using Model.Entities;
+using BlazorServerApp.Model.Entities;
 
-namespace Model.Repositories;
+namespace BlazorServerApp.Model.Repositories;
 
 /// <summary>
 /// Generic repository interface for entity-specific data access.

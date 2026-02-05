@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="ViewBlazor/ViewBlazor.csproj" />
-  <Project Path="Model/Model.csproj" Id="30faf8d8-c00e-4795-aaba-f1454226b313" />
+  <Project Path="Model/BlazorServerApp.Model.csproj" Id="30faf8d8-c00e-4795-aaba-f1454226b313" />
   <Project Path="ViewModel/ViewModel.csproj" Id="6a99b3a6-7ddc-4383-a36b-003bd1d08142" />
 </Solution>

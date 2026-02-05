@@ -1,4 +1,4 @@
-namespace Model.ViewModels;
+namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Interface for field-level ViewModels (properties with metadata).

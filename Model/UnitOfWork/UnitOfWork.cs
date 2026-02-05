@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
-using Model.Data;
-using Model.Entities;
-using Model.Factories;
-using Model.Repositories;
-using Model.ViewModels;
+using BlazorServerApp.Model.Data;
+using BlazorServerApp.Model.Entities;
+using BlazorServerApp.Model.Factories;
+using BlazorServerApp.Model.Repositories;
+using BlazorServerApp.Model.ViewModels;
 
-namespace Model.UnitOfWork;
+namespace BlazorServerApp.Model.UnitOfWork;
 
 /// <summary>
 /// Unit of Work implementation with EF Core.
