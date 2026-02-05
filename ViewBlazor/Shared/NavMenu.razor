@@ -1,48 +1,37 @@
 @using ViewModel
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="javascript:void(0)" @onclick="@(() => ViewModel.ActivateHome())">ViewBlazor</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<div class="rz-p-4">
+    <div class="rz-text-align-center rz-mb-4">
+        <a class="navbar-brand" href="javascript:void(0)" @onclick="@(() => ViewModel.ActivateHome())">
+            <RadzenText TextStyle="TextStyle.H5" class="rz-m-0">ViewBlazor</RadzenText>
+        </a>
     </div>
-</div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <a class="nav-link @(ViewModel.IsHomeActive ? "active" : "")"
-               href="javascript:void(0)"
-               @onclick="@(() => ViewModel.ActivateHome())">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </a>
-        </div>
-        <div class="nav-item px-3">
-            <a class="nav-link"
-               href="javascript:void(0)"
-               @onclick="CreatePersonsTab">
-                <span class="oi oi-people" aria-hidden="true"></span> Persons
-            </a>
-        </div>
-    </nav>
+    <RadzenPanelMenu Multiple="false" Click="@OnMenuClick">
+        <RadzenPanelMenuItem Text="Home" Icon="home" Value="@("home")"
+                            Selected="@ViewModel.IsHomeActive" />
+        <RadzenPanelMenuItem Text="Data" Icon="storage">
+            <RadzenPanelMenuItem Text="Persons" Icon="people" Value="@("persons")" />
+        </RadzenPanelMenuItem>
+    </RadzenPanelMenu>
 </div>
 
 @code {
     [Parameter]
     public MainWindowViewModel ViewModel { get; set; } = null!;
 
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
+    private void OnMenuClick(MenuItemEventArgs args)
     {
-        collapseNavMenu = !collapseNavMenu;
-    }
+        var value = args.Value?.ToString();
 
-    private void CreatePersonsTab()
-    {
-        ViewModel.CreateTab<PersonListViewModel>();
+        switch (value)
+        {
+            case "home":
+                ViewModel.ActivateHome();
+                break;
+            case "persons":
+                ViewModel.CreateTab<PersonListViewModel>();
+                break;
+        }
     }
 }
