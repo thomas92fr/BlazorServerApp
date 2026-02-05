@@ -12,6 +12,9 @@ public class Person : IEntity
     public DateTime StartDateTime { get; set; } = DateTime.Now;
     public DateTime EndDateTime { get; set; } = DateTime.Now.AddYears(1);
 
+    public decimal Score { get; set; }
+    public TimeSpan WorkDuration { get; set; }
+
     public int? MentorId { get; set; }
 
     private Person? _mentor;

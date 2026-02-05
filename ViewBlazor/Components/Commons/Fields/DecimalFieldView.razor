@@ -1,0 +1,133 @@
+@using ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+
+<div class="position-relative rz-mb-3" @onfocusin="OnFocus" @onfocusout="OnBlur">
+    <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+        <End>
+            @if (!string.IsNullOrEmpty(Field?.Hint))
+            {
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
+            }
+        </End>
+        <ChildContent>
+            @if (Field?.List != null && Field.ValueMustBeInTheList)
+            {
+                @* Strict select mode: only values from list allowed *@
+                <RadzenDropDown TValue="decimal"
+                                Data="@Field.List"
+                                Value="@Field.Value"
+                                ValueChanged="@OnValueChanged"
+                                Disabled="@(Field?.ReadOnly ?? false)"
+                                AllowFiltering="true"
+                                Style="width: 100%;" />
+            }
+            else
+            {
+                @* Free input mode with built-in +/- buttons *@
+                <RadzenNumeric TValue="decimal"
+                               Value="@(Field?.Value ?? 0m)"
+                               ValueChanged="@OnValueChanged"
+                               Disabled="@(Field?.ReadOnly ?? false)"
+                               ShowUpDown="@(!(Field?.ReadOnly ?? false))"
+                               Format="@Field?.Format"
+                               Min="@Field?.Min"
+                               Max="@Field?.Max"
+                               Step="@(Field?.Step.ToString() ?? "0.01")"
+                               Style="width: 100%;" />
+            }
+        </ChildContent>
+    </RadzenFormField>
+    @* Popup suggestion list - outside RadzenFormField *@
+    @if (_showSuggestions && Field?.List != null && !Field.ValueMustBeInTheList && !(Field?.ReadOnly ?? false))
+    {
+        <div class="position-absolute w-100 shadow-sm"
+             style="z-index: 1000; max-height: 200px; overflow-y: auto; background: var(--rz-base-background-color); border: 1px solid var(--rz-input-border); border-radius: var(--rz-border-radius); top: 100%;">
+            @foreach (var item in Field.List)
+            {
+                <div class="rz-p-2"
+                     style="cursor: pointer;"
+                     @onmousedown="() => SelectValue(item)"
+                     @onmouseenter="@(e => _hoveredItem = item)"
+                     @onmouseleave="@(e => _hoveredItem = null)"
+                     tabindex="-1">
+                    <RadzenText TextStyle="TextStyle.Body2"
+                                Style="@(_hoveredItem == item ? "color: var(--rz-primary);" : "")">
+                        @item
+                    </RadzenText>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
+
+@code {
+    [Parameter]
+    public DecimalFieldViewModel? Field { get; set; }
+
+    private bool _showSuggestions;
+    private decimal? _hoveredItem;
+
+    private void OnValueChanged(decimal value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+        }
+    }
+
+    private void OnFocus()
+    {
+        _showSuggestions = true;
+    }
+
+    private void OnBlur()
+    {
+        // Delay to allow click on suggestion item
+        _ = Task.Delay(200).ContinueWith(_ =>
+        {
+            _showSuggestions = false;
+            _hoveredItem = null;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void SelectValue(decimal value)
+    {
+        if (Field != null)
+        {
+            Field.Value = value;
+            _showSuggestions = false;
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

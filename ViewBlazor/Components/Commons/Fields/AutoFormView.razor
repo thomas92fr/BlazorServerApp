@@ -137,6 +137,18 @@
             builder.AddAttribute(1, "Field", intField);
             builder.CloseComponent();
         }
+        else if (field is DecimalFieldViewModel decimalField)
+        {
+            builder.OpenComponent<DecimalFieldView>(0);
+            builder.AddAttribute(1, "Field", decimalField);
+            builder.CloseComponent();
+        }
+        else if (field is TimeSpanFieldViewModel timeSpanField)
+        {
+            builder.OpenComponent<TimeSpanFieldView>(0);
+            builder.AddAttribute(1, "Field", timeSpanField);
+            builder.CloseComponent();
+        }
         else if (field is BoolFieldViewModel boolField)
         {
             builder.OpenComponent<BoolFieldView>(0);

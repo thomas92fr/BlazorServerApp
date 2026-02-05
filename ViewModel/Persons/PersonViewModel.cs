@@ -26,6 +26,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private DateTimeFieldViewModel? _endDateTimeField;
     private ReferenceFieldViewModel<PersonViewModel>? _mentorField;
     private IntegerFieldViewModel? _durationInDaysField;
+    private DecimalFieldViewModel? _scoreField;
+    private TimeSpanFieldViewModel? _workDurationField;
 
     public PersonViewModel(
         Person person,
@@ -137,6 +139,54 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     };
 
     /// <summary>
+    /// Decimal property demonstrating DecimalFieldViewModel with formatting.
+    /// </summary>
+    public DecimalFieldViewModel Score => _scoreField ??= new DecimalFieldViewModel(
+        parent: this,
+        getValue: () => _person.Score,
+        setValue: value => _person.Score = value)
+    {
+        Label = "Score",
+        Hint = "Person's evaluation score (0-100)",
+        ColumnOrder = 5,
+        FormGroupHeader = "Informations personnelles",
+        FormGroupOrder = 2,
+        Format = "#.00",
+        Step = 0.5m,
+        Min = 0m,
+        Max = 100m,
+        ValidationRules = rules => rules
+            .GreaterThanOrEqualTo(0m).WithMessage("Score cannot be negative.")
+                .WithSeverity(Severity.Error)
+            .LessThanOrEqualTo(100m).WithMessage("Score cannot exceed 100.")
+                .WithSeverity(Severity.Error)
+            .Must(score => score >= 50m).WithMessage("Score below 50 is a failing grade.")
+                .WithSeverity(Severity.Warning)
+    };
+
+    /// <summary>
+    /// TimeSpan property demonstrating TimeSpanFieldViewModel.
+    /// </summary>
+    public TimeSpanFieldViewModel WorkDuration => _workDurationField ??= new TimeSpanFieldViewModel(
+        parent: this,
+        getValue: () => _person.WorkDuration,
+        setValue: value => _person.WorkDuration = value)
+    {
+        Label = "Work Duration",
+        Hint = "Daily work duration",
+        ColumnOrder = 6,
+        FormGroupHeader = "Informations personnelles",
+        FormGroupOrder = 2,
+        ShowDays = false,
+        ShowSeconds = false,
+        ValidationRules = rules => rules
+            .LessThanOrEqualTo(TimeSpan.FromHours(24)).WithMessage("Duration cannot exceed 24 hours.")
+                .WithSeverity(Severity.Error)
+            .Must(d => d <= TimeSpan.FromHours(10)).WithMessage("Working more than 10 hours is not recommended.")
+                .WithSeverity(Severity.Warning)
+    };
+
+    /// <summary>
     /// DateTime property (date picker in UI).
     /// </summary>
     public DateTimeFieldViewModel StartDateTime => _startDateTimeField ??= new DateTimeFieldViewModel(
@@ -146,7 +196,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Start Date",
         Hint = "Start date and time",
-        ColumnOrder = 5,
+        ColumnOrder = 7,
         FormGroupHeader = "Période",
         FormGroupOrder = 3,
         NotifyOnChange = new[] { nameof(DurationInDays) },
@@ -160,7 +210,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "End Date",
         Hint = "End date and time",
-        ColumnOrder = 6,
+        ColumnOrder = 8,
         FormGroupHeader = "Période",
         FormGroupOrder = 3,
         NotifyOnChange = new[] { nameof(DurationInDays) },
@@ -180,7 +230,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Mentor",
         Hint = "Select a mentor",
-        ColumnOrder = 7,
+        ColumnOrder = 9,
         FormGroupHeader = "Encadrement",
         FormGroupOrder = 4,
         HiddenInColumn = true,
@@ -201,7 +251,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Duration (Days)",
         Hint = "Calculated from Start and End dates",
-        ColumnOrder = 8,
+        ColumnOrder = 10,
         FormGroupHeader = "Période",
         FormGroupOrder = 3,
         IsComputed = true,
