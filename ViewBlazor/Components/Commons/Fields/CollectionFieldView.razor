@@ -2,164 +2,135 @@
 @using ViewModel.Commons.Fields
 @using Model.ViewModels
 @using System.Reflection
+@inject TooltipService TooltipService
 @implements IDisposable
 
-<div class="mb-3">
+<div class="rz-mb-3">
     @if (!string.IsNullOrEmpty(Field?.Label))
     {
-        <label class="form-label fw-bold">@Field.Label</label>
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-2">@Field.Label</RadzenText>
     }
 
     @* Toolbar *@
     @if (Field != null && (Field.AllowAdd || Field.AllowMultiSelect || ShowRefresh))
     {
-        <div class="mb-2 d-flex gap-1 flex-wrap">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" class="rz-mb-2" Wrap="FlexWrap.Wrap">
             @if (Field.AllowAdd)
             {
-                <CommandView Command="@Field.AddCommand" CssClass="btn btn-sm btn-success" />
+                <CommandView Command="@Field.AddCommand" />
             }
             @if (Field.AllowMultiSelect && Field.AllowDelete && Field.SelectedCount > 0)
             {
-                <CommandView Command="@Field.DeleteSelectedCommand" CssClass="btn btn-sm btn-danger" />
+                <CommandView Command="@Field.DeleteSelectedCommand" />
             }
             @if (Field.AllowMultiSelect && Field.SelectedCount > 0)
             {
                 <RadzenButton Text="@($"Clear ({Field.SelectedCount})")"
                               ButtonStyle="ButtonStyle.Light"
                               Size="ButtonSize.Small"
-                              Click="() => Field.ClearSelection()" />
+                              Click="ClearSelection" />
             }
             @if (ShowRefresh)
             {
-                <CommandView Command="@Field.RefreshCommand" CssClass="btn btn-sm btn-outline-secondary" />
+                <CommandView Command="@Field.RefreshCommand" />
             }
-        </div>
+        </RadzenStack>
     }
 
-    @* Table *@
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-sm @TableCssClass">
-            <thead class="table-light">
-                <tr>
-                    @if (Field?.AllowMultiSelect == true)
-                    {
-                        <th style="width: 40px;">
-                            <input type="checkbox"
-                                   class="form-check-input"
-                                   checked="@IsAllSelected()"
-                                   @onchange="OnSelectAllChanged"
-                                   title="Select all" />
-                        </th>
-                    }
-                    @if (Field?.ColumnFields != null)
-                    {
-                        @foreach (var field in Field.ColumnFields)
-                        {
-                            <th style="@(field.ColumnWidth != null ? $"width: {field.ColumnWidth}" : "")">
-                                @field.Label
-                            </th>
-                        }
-                    }
-                    @if (Field?.AllowDelete == true || ShowActions)
-                    {
-                        <th style="width: 100px;">Actions</th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @if (Field?.Collection != null && Field.Collection.Count > 0)
+    @* RadzenDataGrid *@
+    <RadzenDataGrid @ref="grid"
+                    TItem="T"
+                    Data="@Field?.Collection"
+                    SelectionMode="@GetSelectionMode()"
+                    Value="@selectedItems"
+                    ValueChanged="@OnSelectionChanged"
+                    AllowSorting="true"
+                    AllowColumnResize="true"
+                    ShowCheckBoxColumn="@(Field?.AllowMultiSelect == true)"
+                    class="@TableCssClass">
+        <EmptyTemplate>
+            <RadzenText TextStyle="TextStyle.Body2" class="rz-text-align-center rz-p-4">
+                @EmptyMessage
+            </RadzenText>
+        </EmptyTemplate>
+        <Columns>
+            @if (Field?.ColumnProperties != null)
+            {
+                @foreach (var prop in Field.ColumnProperties)
                 {
-                    @foreach (var item in Field.Collection)
-                    {
-                        var isSelected = Field.IsSelected(item);
-                        <tr class="@(isSelected ? "table-primary" : "")"
-                            @onclick="e => OnRowClick(item, e)"
-                            @onclick:stopPropagation="false"
-                            style="cursor: pointer;">
-                            @if (Field.AllowMultiSelect)
-                            {
-                                <td @onclick:stopPropagation="true">
-                                    <input type="checkbox"
-                                           class="form-check-input"
-                                           checked="@isSelected"
-                                           @onchange="() => Field.ToggleSelection(item)" />
-                                </td>
-                            }
-                            @foreach (var prop in Field.ColumnProperties)
-                            {
-                                var fieldVm = prop.GetValue(item) as IFieldViewModel;
-                                @if (fieldVm != null)
-                                {
-                                    <td>@GetFieldValue(fieldVm)</td>
-                                }
-                            }
-                            @if (Field.AllowDelete || ShowActions)
-                            {
-                                <td @onclick:stopPropagation="true">
-                                    @if (Field.AllowDelete)
-                                    {
-                                        <RadzenButton Text="Delete"
-                                                      ButtonStyle="ButtonStyle.Danger"
-                                                      Variant="Variant.Outlined"
-                                                      Size="ButtonSize.Small"
-                                                      Click="() => DeleteItem(item)" />
-                                    }
-                                    @if (RowActions != null)
-                                    {
-                                        @RowActions(item)
-                                    }
-                                </td>
-                            }
-                        </tr>
-                    }
+                    var fieldMeta = GetFieldMetadata(prop);
+                    <RadzenDataGridColumn TItem="T"
+                                          Title="@fieldMeta.Label"
+                                          Width="@fieldMeta.Width"
+                                          Property="@($"{prop.Name}.Value")"
+                                          Sortable="true">
+                        <Template Context="item">
+                            @GetFieldValueFromProperty(item, prop)
+                        </Template>
+                    </RadzenDataGridColumn>
                 }
-                else
-                {
-                    <tr>
-                        <td colspan="@GetColumnCount()" class="text-center text-muted py-3">
-                            @EmptyMessage
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+            }
+            @if (Field?.AllowDelete == true || ShowActions)
+            {
+                <RadzenDataGridColumn TItem="T" Title="Actions" Width="80px" Sortable="false" Filterable="false">
+                    <Template Context="item">
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem">
+                            @if (Field?.AllowDelete == true)
+                            {
+                                <RadzenButton Icon="delete"
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Variant="Variant.Text"
+                                              Size="ButtonSize.Small"
+                                              Click="() => DeleteItem(item)"
+                                              MouseEnter="@(args => TooltipService.Open(args, "Delete"))" />
+                            }
+                            @if (RowActions != null)
+                            {
+                                @RowActions(item)
+                            }
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+            }
+        </Columns>
+    </RadzenDataGrid>
 
     @* Validation Messages *@
     @if (!string.IsNullOrEmpty(Field?.Error))
     {
-        <div class="text-danger">
+        <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" Size="AlertSize.Small" class="rz-mt-2">
             @Field.Error
-        </div>
+        </RadzenAlert>
     }
-
     @if (!string.IsNullOrEmpty(Field?.Warning))
     {
-        <div class="text-warning">
+        <RadzenAlert AlertStyle="AlertStyle.Warning" Shade="Shade.Lighter" Size="AlertSize.Small" class="rz-mt-2">
             @Field.Warning
-        </div>
+        </RadzenAlert>
     }
-
     @if (!string.IsNullOrEmpty(Field?.Hint))
     {
-        <small class="form-text text-muted">@Field.Hint</small>
+        <RadzenText TextStyle="TextStyle.Caption" class="rz-mt-1">@Field.Hint</RadzenText>
     }
 
     @* Item Count *@
     @if (ShowCount && Field != null)
     {
-        <small class="text-muted">
+        <RadzenText TextStyle="TextStyle.Caption" class="rz-mt-1">
             @Field.Count item(s)
             @if (Field.AllowMultiSelect && Field.SelectedCount > 0)
             {
                 <span> - @Field.SelectedCount selected</span>
             }
-        </small>
+        </RadzenText>
     }
 </div>
 
 @code {
+    private RadzenDataGrid<T>? grid;
     private CollectionFieldViewModel<T>? _previousField;
+    private IList<T>? selectedItems = new List<T>();
+    private bool _isSyncing = false;
 
     [Parameter]
     public CollectionFieldViewModel<T>? Field { get; set; }
@@ -199,91 +170,107 @@
 
     protected override void OnParametersSet()
     {
-        // Subscribe to PropertyChanged when Field changes
         if (_previousField != Field)
         {
             if (_previousField != null)
             {
                 _previousField.PropertyChanged -= OnFieldPropertyChanged;
             }
-
             if (Field != null)
             {
                 Field.PropertyChanged += OnFieldPropertyChanged;
+                SyncSelectionFromViewModel();
             }
-
             _previousField = Field;
         }
     }
 
     private void OnFieldPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Notify parent when SelectedItem changes
-        if (e.PropertyName == nameof(Field.SelectedItem))
-        {
-            SelectedItemChanged.InvokeAsync(Field?.SelectedItem);
-        }
+        // Ignore selection changes while we're syncing to avoid loops
+        if (_isSyncing) return;
 
-        // Notify parent when SelectedItems changes
-        if (e.PropertyName == nameof(Field.SelectedItems) || e.PropertyName == nameof(Field.SelectedCount))
+        if (e.PropertyName == nameof(Field.SelectedItem) ||
+            e.PropertyName == nameof(Field.SelectedItems) ||
+            e.PropertyName == nameof(Field.SelectedCount))
         {
-            SelectedItemsChanged.InvokeAsync(Field?.SelectedItems.ToList());
+            SyncSelectionFromViewModel();
         }
-
-        // Re-render when collection properties change
         InvokeAsync(StateHasChanged);
     }
 
-    private void OnRowClick(T item, MouseEventArgs e)
+    private void SyncSelectionFromViewModel()
     {
         if (Field == null) return;
 
         if (Field.AllowMultiSelect)
         {
-            if (e.ShiftKey)
-            {
-                // Shift+Click: range selection
-                Field.SelectRange(item);
-            }
-            else if (e.CtrlKey)
-            {
-                // Ctrl+Click: toggle selection
-                Field.ToggleSelection(item);
-            }
-            else
-            {
-                // Normal click: single selection
-                Field.Select(item);
-                SelectedItemChanged.InvokeAsync(item);
-            }
+            selectedItems = Field.SelectedItems.ToList();
+        }
+        else if (Field.SelectedItem != null)
+        {
+            selectedItems = new List<T> { Field.SelectedItem };
         }
         else
         {
-            // Single-select mode
-            Field.Select(item);
-            SelectedItemChanged.InvokeAsync(item);
+            selectedItems = new List<T>();
         }
     }
 
-    private void OnSelectAllChanged(ChangeEventArgs e)
+    private DataGridSelectionMode GetSelectionMode()
     {
+        return Field?.AllowMultiSelect == true
+            ? DataGridSelectionMode.Multiple
+            : DataGridSelectionMode.Single;
+    }
+
+    private void OnSelectionChanged(IList<T>? newSelection)
+    {
+        selectedItems = newSelection ?? new List<T>();
+
         if (Field == null) return;
 
-        var isChecked = (bool)(e.Value ?? false);
-        if (isChecked)
+        try
         {
-            Field.SelectAll();
-        }
-        else
-        {
+            _isSyncing = true;
+
+            // Sync selection to ViewModel
             Field.ClearSelection();
+            foreach (var item in selectedItems)
+            {
+                Field.ToggleSelection(item);
+            }
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+
+        // Notify parent components
+        var lastSelected = selectedItems.LastOrDefault();
+        if (lastSelected != null)
+        {
+            SelectedItemChanged.InvokeAsync(lastSelected);
+        }
+
+        if (Field.AllowMultiSelect)
+        {
+            SelectedItemsChanged.InvokeAsync(Field.SelectedItems.ToList());
         }
     }
 
-    private bool IsAllSelected()
+    private void ClearSelection()
     {
-        if (Field == null || Field.Collection.Count == 0) return false;
-        return Field.SelectedCount == Field.Count;
+        try
+        {
+            _isSyncing = true;
+            Field?.ClearSelection();
+            selectedItems = new List<T>();
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
     }
 
     private void DeleteItem(T item)
@@ -291,19 +278,29 @@
         Field?.DeleteCommand.Command.Execute(item);
     }
 
-    private string GetFieldValue(IFieldViewModel field)
+    private (string Label, string? Width) GetFieldMetadata(PropertyInfo prop)
     {
-        var valueProperty = field.GetType().GetProperty("Value");
-        var value = valueProperty?.GetValue(field);
-        return value?.ToString() ?? string.Empty;
+        if (Field?.Collection.FirstOrDefault() is T firstItem)
+        {
+            var fieldVm = prop.GetValue(firstItem) as IFieldViewModel;
+            if (fieldVm != null)
+            {
+                return (fieldVm.Label ?? prop.Name, fieldVm.ColumnWidth);
+            }
+        }
+        return (prop.Name, null);
     }
 
-    private int GetColumnCount()
+    private string GetFieldValueFromProperty(T item, PropertyInfo prop)
     {
-        var count = Field?.ColumnFields?.Count ?? 0;
-        if (Field?.AllowMultiSelect == true) count++;
-        if (Field?.AllowDelete == true || ShowActions) count++;
-        return Math.Max(count, 1);
+        var fieldVm = prop.GetValue(item) as IFieldViewModel;
+        if (fieldVm != null)
+        {
+            var valueProperty = fieldVm.GetType().GetProperty("Value");
+            var value = valueProperty?.GetValue(fieldVm);
+            return value?.ToString() ?? string.Empty;
+        }
+        return string.Empty;
     }
 
     public void Dispose()
