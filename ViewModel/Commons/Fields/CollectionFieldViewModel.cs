@@ -38,6 +38,8 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private string? _columnWidth;
     private bool _hiddenInColumn;
     private int _columnOrder;
+    private string? _formGroupHeader;
+    private int _formGroupOrder;
 
     // Permission flags
     private bool _allowAdd = true;
@@ -173,6 +175,18 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     {
         get => _columnOrder;
         set => SetProperty(ref _columnOrder, value);
+    }
+
+    public string? FormGroupHeader
+    {
+        get => _formGroupHeader;
+        set => SetProperty(ref _formGroupHeader, value);
+    }
+
+    public int FormGroupOrder
+    {
+        get => _formGroupOrder;
+        set => SetProperty(ref _formGroupOrder, value);
     }
 
     public bool HasSetValueFunction => false;

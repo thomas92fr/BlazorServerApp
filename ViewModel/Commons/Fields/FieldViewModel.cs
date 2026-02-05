@@ -33,6 +33,8 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     private string? _columnWidth;
     private bool _hiddenInColumn;
     private int _columnOrder;
+    private string? _formGroupHeader;
+    private int _formGroupOrder;
 
     // Computed field support
     private bool _isComputed;
@@ -198,6 +200,26 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get => _columnOrder;
         set => SetProperty(ref _columnOrder, value);
+    }
+
+    /// <summary>
+    /// Group header for form display. Fields with the same header are grouped together.
+    /// Null or empty means no group (displayed at the top).
+    /// </summary>
+    public string? FormGroupHeader
+    {
+        get => _formGroupHeader;
+        set => SetProperty(ref _formGroupHeader, value);
+    }
+
+    /// <summary>
+    /// Display order of the group in the form. Lower values appear first.
+    /// Default is 0.
+    /// </summary>
+    public int FormGroupOrder
+    {
+        get => _formGroupOrder;
+        set => SetProperty(ref _formGroupOrder, value);
     }
 
     public bool ValueMustBeInTheList

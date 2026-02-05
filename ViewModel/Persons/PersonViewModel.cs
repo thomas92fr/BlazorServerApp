@@ -48,7 +48,10 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Label = "Id",
         Hint = "Person ID in database",
         ReadOnly = true,
-        ColumnWidth = "60px"
+        ColumnWidth = "60px",
+        ColumnOrder = 1,
+        FormGroupHeader = "Identification",
+        FormGroupOrder = 1
     };
 
     /// <summary>
@@ -61,6 +64,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Name",
         Hint = "Person's full name",
+        ColumnOrder = 2,
         ValidationRules = rules => rules
             .NotEmpty().WithMessage("Name is required.")
                 .WithSeverity(Severity.Error)
@@ -94,6 +98,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         Label = "Age",
         Hint = "Person's age in years",
         ColumnWidth = "80px",
+        ColumnOrder = 3,
         ValueMustBeInTheList = false,
         ValidationRules = rules => rules
             // ERRORS (block save)
@@ -120,6 +125,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Is Teacher",
         Hint = "Check if person is a teacher",
+        ColumnOrder = 4,
         HiddenInColumn = true
     };
 
@@ -133,6 +139,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Start Date",
         Hint = "Start date and time",
+        ColumnOrder = 5,
         NotifyOnChange = new[] { nameof(DurationInDays) },
         HiddenInColumn = true
     };
@@ -144,6 +151,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "End Date",
         Hint = "End date and time",
+        ColumnOrder = 6,
         NotifyOnChange = new[] { nameof(DurationInDays) },
         HiddenInColumn = true
     };
@@ -161,6 +169,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Mentor",
         Hint = "Select a mentor",
+        ColumnOrder = 7,
         HiddenInColumn = true,
         ValidationRules = rules => rules
             .Must(mentor => mentor?.Model != _person)
@@ -179,6 +188,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     {
         Label = "Duration (Days)",
         Hint = "Calculated from Start and End dates",
+        ColumnOrder = 8,
         IsComputed = true,
         HiddenInColumn = true,
         ValidationRules = rules => rules

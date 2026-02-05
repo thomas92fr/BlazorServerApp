@@ -30,4 +30,16 @@ public interface IFieldViewModel
     /// Default is 0.
     /// </summary>
     int ColumnOrder { get; set; }
+
+    /// <summary>
+    /// Group header for form display. Fields with the same header are grouped together.
+    /// Null or empty means no group (displayed at the top).
+    /// </summary>
+    string? FormGroupHeader { get; set; }
+
+    /// <summary>
+    /// Display order of the group in the form. Lower values appear first.
+    /// Default is 0.
+    /// </summary>
+    int FormGroupOrder { get; set; }
 }

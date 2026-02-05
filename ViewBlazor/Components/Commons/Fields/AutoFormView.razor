@@ -1,0 +1,178 @@
+@using ViewModel.Commons.Fields
+@using Model.ViewModels
+@using System.Reflection
+
+<div class="auto-form @CssClass">
+    @if (ViewModel != null)
+    {
+        var groupedFields = GetGroupedFields();
+
+        @foreach (var group in groupedFields)
+        {
+            @if (!string.IsNullOrEmpty(group.Header))
+            {
+                <fieldset class="mb-4">
+                    <legend class="fw-bold border-bottom pb-2 mb-3">@group.Header</legend>
+                    @foreach (var fieldInfo in group.Fields)
+                    {
+                        @RenderField(fieldInfo.Field, fieldInfo.Property)
+                    }
+                </fieldset>
+            }
+            else
+            {
+                @foreach (var fieldInfo in group.Fields)
+                {
+                    @RenderField(fieldInfo.Field, fieldInfo.Property)
+                }
+            }
+        }
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The ViewModel to render as a form.
+    /// </summary>
+    [Parameter]
+    public object? ViewModel { get; set; }
+
+    /// <summary>
+    /// Optional CSS class for the form container.
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    /// <summary>
+    /// If true, fields marked with HiddenInColumn are also hidden in the form.
+    /// Default is false (show all fields).
+    /// </summary>
+    [Parameter]
+    public bool RespectHiddenInColumn { get; set; } = false;
+
+    /// <summary>
+    /// Optional filter to include only specific field names.
+    /// If null or empty, all fields are shown.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<string>? IncludeFields { get; set; }
+
+    /// <summary>
+    /// Optional filter to exclude specific field names.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<string>? ExcludeFields { get; set; }
+
+    private record FieldInfo(IFieldViewModel Field, PropertyInfo Property);
+    private record FieldGroup(string? Header, int Order, IEnumerable<FieldInfo> Fields);
+
+    private IEnumerable<FieldGroup> GetGroupedFields()
+    {
+        var fields = GetOrderedFields().ToList();
+
+        // Group by FormGroupHeader, then order groups by FormGroupOrder, then fields by ColumnOrder
+        return fields
+            .GroupBy(f => f.Field.FormGroupHeader ?? "")
+            .Select(g => new FieldGroup(
+                Header: string.IsNullOrEmpty(g.Key) ? null : g.Key,
+                Order: g.First().Field.FormGroupOrder,
+                Fields: g.OrderBy(f => f.Field.ColumnOrder)
+            ))
+            .OrderBy(g => g.Order)
+            .ThenBy(g => g.Header ?? "");
+    }
+
+    private IEnumerable<FieldInfo> GetOrderedFields()
+    {
+        if (ViewModel == null)
+            return Enumerable.Empty<FieldInfo>();
+
+        var properties = ViewModel.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => typeof(IFieldViewModel).IsAssignableFrom(p.PropertyType));
+
+        var includeSet = IncludeFields?.ToHashSet();
+        var excludeSet = ExcludeFields?.ToHashSet() ?? new HashSet<string>();
+
+        var fields = new List<FieldInfo>();
+
+        foreach (var prop in properties)
+        {
+            // Apply include filter
+            if (includeSet != null && !includeSet.Contains(prop.Name))
+                continue;
+
+            // Apply exclude filter
+            if (excludeSet.Contains(prop.Name))
+                continue;
+
+            var field = prop.GetValue(ViewModel) as IFieldViewModel;
+            if (field == null)
+                continue;
+
+            // Apply HiddenInColumn filter if requested
+            if (RespectHiddenInColumn && field.HiddenInColumn)
+                continue;
+
+            fields.Add(new FieldInfo(field, prop));
+        }
+
+        return fields;
+    }
+
+    private RenderFragment RenderField(IFieldViewModel field, PropertyInfo property) => builder =>
+    {
+        var fieldType = field.GetType();
+
+        // Check for specific field types
+        if (field is StringFieldViewModel stringField)
+        {
+            builder.OpenComponent<StringFieldView>(0);
+            builder.AddAttribute(1, "Field", stringField);
+            builder.CloseComponent();
+        }
+        else if (field is IntegerFieldViewModel intField)
+        {
+            builder.OpenComponent<IntegerFieldView>(0);
+            builder.AddAttribute(1, "Field", intField);
+            builder.CloseComponent();
+        }
+        else if (field is BoolFieldViewModel boolField)
+        {
+            builder.OpenComponent<BoolFieldView>(0);
+            builder.AddAttribute(1, "Field", boolField);
+            builder.CloseComponent();
+        }
+        else if (field is DateTimeFieldViewModel dateTimeField)
+        {
+            builder.OpenComponent<DateTimeFieldView>(0);
+            builder.AddAttribute(1, "Field", dateTimeField);
+            builder.CloseComponent();
+        }
+        else if (fieldType.IsGenericType)
+        {
+            var genericDef = fieldType.GetGenericTypeDefinition();
+
+            if (genericDef == typeof(ReferenceFieldViewModel<>))
+            {
+                // Get the generic type argument (e.g., PersonViewModel)
+                var itemType = fieldType.GetGenericArguments()[0];
+                var componentType = typeof(ReferenceFieldView<>).MakeGenericType(itemType);
+
+                builder.OpenComponent(0, componentType);
+                builder.AddAttribute(1, "Field", field);
+                builder.CloseComponent();
+            }
+            else if (genericDef == typeof(CollectionFieldViewModel<>))
+            {
+                // Get the generic type argument
+                var itemType = fieldType.GetGenericArguments()[0];
+                var componentType = typeof(CollectionFieldView<>).MakeGenericType(itemType);
+
+                builder.OpenComponent(0, componentType);
+                builder.AddAttribute(1, "Field", field);
+                builder.CloseComponent();
+            }
+        }
+    };
+}
