@@ -18,6 +18,8 @@ public class Person : IEntity
 
     public string Comment { get; set; } = string.Empty;
 
+    public string? Cv { get; set; }
+
     public int? MentorId { get; set; }
 
     private Person? _mentor;

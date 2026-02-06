@@ -30,6 +30,8 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private TimeSpanFieldViewModel? _workDurationField;
     private IntegerSliderFieldViewModel? _satisfactionField;
     private HtmlFieldViewModel? _commentField;
+    private FileFieldViewModel? _cvField;
+
 
     public PersonViewModel(
         Person person,
@@ -278,6 +280,23 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         FormGroupOrder = 5,
         HiddenInColumn = true,
         UploadUrl = "upload/image"
+    };
+
+    /// <summary>
+    /// File upload field for CV (PDF, Word, etc.).
+    /// </summary>
+    public FileFieldViewModel Cv => _cvField ??= new FileFieldViewModel(
+        parent: this,
+        getValue: () => _person.Cv ?? string.Empty,
+        setValue: value => _person.Cv = string.IsNullOrEmpty(value) ? null : value)
+    {
+        Label = "CV",
+        Hint = "Upload a CV (PDF, Word)",
+        ColumnOrder = 13,
+        FormGroupHeader = "Notes",
+        FormGroupOrder = 5,
+        HiddenInColumn = true,
+        Accept = ".pdf,.doc,.docx"
     };
 
     /// <summary>

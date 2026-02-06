@@ -1,0 +1,130 @@
+@using BlazorServerApp.ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+@inject IJSRuntime JS
+
+<div class="rz-mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0; line-height: 1;">@Field.Label</RadzenText>
+            @if (!string.IsNullOrEmpty(Field?.Hint))
+            {
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color); font-size: 18px; line-height: 1;"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
+            }
+            @if (!string.IsNullOrEmpty(_fileValue))
+            {
+                <a @onclick="OnDownload" @onclick:preventDefault style="display: flex; align-items: center; cursor: pointer;">
+                    <RadzenIcon Icon="download" Style="color: var(--rz-info); font-size: 18px; line-height: 1;"
+                                MouseEnter="@(args => TooltipService.Open(args, _fileName ?? "Download"))" />
+                </a>
+            }
+        </div>
+    }
+
+    <RadzenFileInput TValue="string"
+                     @bind-Value="_fileValue"
+                     @bind-FileName="_fileName"
+                     @bind-FileSize="_fileSize"
+                     Style="width: 100%"
+                     Disabled="@(Field?.ReadOnly ?? false)"
+                     Accept="@Field?.Accept"
+                     Change="@OnChange"
+                     Error="@OnError"
+                     InputAttributes="@(new Dictionary<string, object> { { "aria-label", Field?.Label ?? "select file" } })" />
+</div>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="true"
+                 Close="@(() => _errorMessage = null)"
+                 class="rz-mt-1">
+        @_errorMessage
+    </RadzenAlert>
+}
+
+@code {
+    [Parameter]
+    public FileFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private string? _fileValue;
+    private string? _fileName;
+    private long? _fileSize;
+    private string? _errorMessage;
+
+    protected override void OnParametersSet()
+    {
+        // Split combined "filename\ndataurl" from the ViewModel
+        var combined = Field?.Value;
+        _fileValue = FileFieldViewModel.ExtractDataUrl(combined);
+        _fileName = FileFieldViewModel.ExtractFileName(combined);
+    }
+
+    private async Task OnChange(string value)
+    {
+        _errorMessage = null;
+        if (Field != null)
+        {
+            // Combine filename + data URL into the storage format
+            var combined = FileFieldViewModel.Combine(_fileName, value);
+            Field.Value = combined;
+            await ValueChanged.InvokeAsync(combined);
+        }
+    }
+
+    private void OnError(UploadErrorEventArgs args)
+    {
+        _errorMessage = args.Message;
+    }
+
+    private async Task OnDownload()
+    {
+        if (!string.IsNullOrEmpty(_fileValue))
+        {
+            await JS.InvokeVoidAsync("eval", $"""
+                var a = document.createElement('a');
+                a.href = '{_fileValue}';
+                a.download = '{(_fileName ?? "file").Replace("'", "\\'")}';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            """);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

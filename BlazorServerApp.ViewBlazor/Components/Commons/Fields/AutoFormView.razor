@@ -129,7 +129,13 @@
         var fieldType = field.GetType();
 
         // Check for specific field types (order matters: subtypes before base types)
-        if (field is HtmlFieldViewModel htmlField)
+        if (field is FileFieldViewModel fileField)
+        {
+            builder.OpenComponent<FileFieldView>(0);
+            builder.AddAttribute(1, "Field", fileField);
+            builder.CloseComponent();
+        }
+        else if (field is HtmlFieldViewModel htmlField)
         {
             builder.OpenComponent<HtmlFieldView>(0);
             builder.AddAttribute(1, "Field", htmlField);

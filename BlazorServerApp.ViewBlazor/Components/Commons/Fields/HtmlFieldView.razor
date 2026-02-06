@@ -4,11 +4,11 @@
 <div class="rz-mb-3">
     @if (!string.IsNullOrEmpty(Field?.Label))
     {
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <RadzenText TextStyle="TextStyle.Subtitle2">@Field.Label</RadzenText>
+        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin: 0; line-height: 1;">@Field.Label</RadzenText>
             @if (!string.IsNullOrEmpty(Field?.Hint))
             {
-                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color); font-size: 18px;"
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color); font-size: 18px; line-height: 1;"
                             MouseEnter="@(args => ShowHintTooltip(args))" />
             }
         </div>
