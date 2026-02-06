@@ -83,6 +83,7 @@ All entity properties are wrapped in typed FieldViewModels:
 | Type | Usage |
 |------|-------|
 | `StringFieldViewModel` | Text properties |
+| `PasswordFieldViewModel` | Password properties (masked input, hidden from MCP) |
 | `IntegerFieldViewModel` | Numbers (includes +/- commands) |
 | `IntegerSliderFieldViewModel` | Sliders (Min, Max, Step) |
 | `DecimalFieldViewModel` | Decimal numbers (Format, Step, Min, Max, +/- commands) |
@@ -118,6 +119,21 @@ public StringFieldViewModel Name => _nameField ??= new StringFieldViewModel(
         .Must(n => n?.Length >= 2).WithMessage("Short name.").WithSeverity(Severity.Warning)
 };
 ```
+
+**PasswordFieldViewModel Example:**
+```csharp
+public PasswordFieldViewModel Password => _passwordField ??= new PasswordFieldViewModel(
+    parent: this,
+    getValue: () => _entity.Password,
+    setValue: value => _entity.Password = value)
+{
+    Label = "Password",
+    Hint = "Enter your password",
+    ValidationRules = rules => rules
+        .NotEmpty().WithMessage("Required.").WithSeverity(Severity.Error)
+};
+```
+**MCP:** `GetRawValue()` returns `"***"` instead of the actual password.
 
 **DecimalFieldViewModel Example:**
 ```csharp
@@ -566,6 +582,7 @@ builder.Services.AddRadzenComponents();
 | Component | FieldViewModel | Radzen Component |
 |-----------|----------------|------------------|
 | `StringFieldView` | `StringFieldViewModel` | RadzenTextBox, RadzenDropDown, RadzenAutoComplete |
+| `PasswordFieldView` | `PasswordFieldViewModel` | RadzenPassword |
 | `IntegerFieldView` | `IntegerFieldViewModel` | RadzenNumeric |
 | `IntegerSliderFieldView` | `IntegerSliderFieldViewModel` | RadzenSlider |
 | `DecimalFieldView` | `DecimalFieldViewModel` | RadzenNumeric, RadzenDropDown |
@@ -659,6 +676,7 @@ For each `CollectionFieldViewModel<T>` discovered, a `GetAll{CollectionName}` to
 - `ReferenceFieldViewModel<T>` → referenced entity's ID (not full object)
 - `CollectionFieldViewModel<T>` → count only
 - `FileFieldViewModel` → file name only (not the base64 content)
+- `PasswordFieldViewModel` → `"***"` (never exposes actual password)
 
 ### Adding MCP Support to New Entities
 
