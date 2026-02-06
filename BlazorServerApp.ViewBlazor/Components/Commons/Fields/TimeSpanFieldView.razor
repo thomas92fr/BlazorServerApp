@@ -19,8 +19,8 @@
 }
 else
 {
-    <div class="position-relative rz-mb-3" @onfocusin="OnFocus" @onfocusout="OnBlur">
-        <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+    <div class="position-relative rz-mb-3" style="width: 100%;" @onfocusin="OnFocus" @onfocusout="OnBlur">
+        <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" Style="width: 100%;">
             <End>
                 @if (!string.IsNullOrEmpty(Field?.Hint))
                 {

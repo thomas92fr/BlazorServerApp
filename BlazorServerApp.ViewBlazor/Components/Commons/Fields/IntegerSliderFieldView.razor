@@ -1,8 +1,8 @@
 @using BlazorServerApp.ViewModel.Commons.Fields
 @inject TooltipService TooltipService
 
-<div class="rz-mb-3">
-    <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="w-100">
+<div class="rz-mb-3" style="width: 100%;">
+    <RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" Style="width: 100%;">
         <End>
             @if (!string.IsNullOrEmpty(Field?.Hint))
             {

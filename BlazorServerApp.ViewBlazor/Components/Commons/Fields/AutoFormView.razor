@@ -13,7 +13,7 @@
             {
                 <RadzenCard Variant="Variant.Filled" class="rz-my-4">
                     <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-4"><strong>@group.Header</strong></RadzenText>
-                    <RadzenStack Gap="0">
+                    <RadzenStack Gap="0" AlignItems="AlignItems.Stretch">
                         @foreach (var fieldInfo in group.Fields)
                         {
                             @RenderField(fieldInfo.Field, fieldInfo.Property)
@@ -23,7 +23,7 @@
             }
             else
             {
-                <RadzenStack Gap="0">
+                <RadzenStack Gap="0" AlignItems="AlignItems.Stretch">
                     @foreach (var fieldInfo in group.Fields)
                     {
                         @RenderField(fieldInfo.Field, fieldInfo.Property)
