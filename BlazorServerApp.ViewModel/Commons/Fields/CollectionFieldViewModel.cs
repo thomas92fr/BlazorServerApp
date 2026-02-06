@@ -382,7 +382,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
         var newItem = CreateItem();
         Collection.Add(newItem);
         OnItemAdded?.Invoke(newItem);
-        SelectedItem = newItem;
+        Select(newItem);
 
         // Notify UI of collection change
         OnPropertyChanged(nameof(Collection));
