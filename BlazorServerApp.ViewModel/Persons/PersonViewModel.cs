@@ -278,8 +278,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         ColumnOrder = 12,
         FormGroupHeader = "Notes",
         FormGroupOrder = 5,
-        HiddenInColumn = true,
-        UploadUrl = "upload/image"
+        HiddenInColumn = true
     };
 
     /// <summary>

@@ -38,7 +38,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
-app.MapUploadEndpoints();
+//app.MapUploadEndpoints(); //Endpoints for file uploads
 app.MapViewMcp();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
