@@ -16,6 +16,8 @@ public class Person : IEntity
     public TimeSpan WorkDuration { get; set; }
     public int Satisfaction { get; set; } = 50;
 
+    public string Comment { get; set; } = string.Empty;
+
     public int? MentorId { get; set; }
 
     private Person? _mentor;

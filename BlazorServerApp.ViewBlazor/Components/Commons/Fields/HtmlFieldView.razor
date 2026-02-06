@@ -1,0 +1,77 @@
+@using BlazorServerApp.ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+
+<div class="rz-mb-3">
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <RadzenText TextStyle="TextStyle.Subtitle2">@Field.Label</RadzenText>
+            @if (!string.IsNullOrEmpty(Field?.Hint))
+            {
+                <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color); font-size: 18px;"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
+            }
+        </div>
+    }
+
+    <RadzenHtmlEditor @bind-Value="@_htmlValue"
+                      Style="@($"height: {Field?.Height ?? "450px"};")"
+                      Disabled="@(Field?.ReadOnly ?? false)"
+                      Change="@OnChange"
+                      UploadUrl="@Field?.UploadUrl" />
+</div>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
+
+@code {
+    [Parameter]
+    public HtmlFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private string? _htmlValue;
+
+    protected override void OnParametersSet()
+    {
+        _htmlValue = Field?.Value;
+    }
+
+    private async Task OnChange(string html)
+    {
+        _htmlValue = html;
+        if (Field != null)
+        {
+            Field.Value = html ?? string.Empty;
+            await ValueChanged.InvokeAsync(html ?? string.Empty);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

@@ -2,6 +2,7 @@ using BlazorServerApp.Model;
 using Radzen;
 using BlazorServerApp.ViewModel;
 using BlazorServerApp.ViewMCP;
+using BlazorServerApp.ViewBlazor.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.MapUploadEndpoints();
 app.MapViewMcp();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

@@ -128,8 +128,14 @@
     {
         var fieldType = field.GetType();
 
-        // Check for specific field types
-        if (field is StringFieldViewModel stringField)
+        // Check for specific field types (order matters: subtypes before base types)
+        if (field is HtmlFieldViewModel htmlField)
+        {
+            builder.OpenComponent<HtmlFieldView>(0);
+            builder.AddAttribute(1, "Field", htmlField);
+            builder.CloseComponent();
+        }
+        else if (field is StringFieldViewModel stringField)
         {
             builder.OpenComponent<StringFieldView>(0);
             builder.AddAttribute(1, "Field", stringField);

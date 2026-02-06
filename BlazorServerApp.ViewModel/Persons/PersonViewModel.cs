@@ -29,6 +29,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private DecimalFieldViewModel? _scoreField;
     private TimeSpanFieldViewModel? _workDurationField;
     private IntegerSliderFieldViewModel? _satisfactionField;
+    private HtmlFieldViewModel? _commentField;
 
     public PersonViewModel(
         Person person,
@@ -260,6 +261,23 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
             .Must(mentor => mentor?.Model != _person)
                 .WithMessage("A person cannot be their own mentor.")
                 .WithSeverity(Severity.Error)
+    };
+
+    /// <summary>
+    /// HTML comment field using the rich-text editor.
+    /// </summary>
+    public HtmlFieldViewModel Comment => _commentField ??= new HtmlFieldViewModel(
+        parent: this,
+        getValue: () => _person.Comment,
+        setValue: value => _person.Comment = value)
+    {
+        Label = "Comment",
+        Hint = "Rich-text comment",
+        ColumnOrder = 12,
+        FormGroupHeader = "Notes",
+        FormGroupOrder = 5,
+        HiddenInColumn = true,
+        UploadUrl = "upload/image"
     };
 
     /// <summary>
