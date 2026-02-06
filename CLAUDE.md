@@ -89,6 +89,8 @@ All entity properties are wrapped in typed FieldViewModels:
 | `BoolFieldViewModel` | Checkboxes |
 | `DateTimeFieldViewModel` | Date/time pickers |
 | `TimeSpanFieldViewModel` | Duration pickers (ShowDays, ShowSeconds, Inline) |
+| `HtmlFieldViewModel` | Rich-text HTML content (Height, UploadUrl) |
+| `FileFieldViewModel` | File upload as base64 data URL (Accept filter, download) |
 | `ReferenceFieldViewModel<T>` | Entity references (dropdowns) |
 | `CollectionFieldViewModel<T>` | Collections (table view with CRUD) |
 
@@ -159,6 +161,35 @@ public TimeSpanFieldViewModel WorkDuration => _workDurationField ??= new TimeSpa
     Placeholder = "Select duration"
 };
 ```
+
+**HtmlFieldViewModel Example:**
+```csharp
+public HtmlFieldViewModel Comment => _commentField ??= new HtmlFieldViewModel(
+    parent: this,
+    getValue: () => _entity.Comment,
+    setValue: value => _entity.Comment = value)
+{
+    Label = "Comment",
+    Height = "450px",           // CSS height for the editor (default "450px")
+    UploadUrl = "upload/image"  // Server endpoint for image uploads (null = no upload button)
+};
+```
+
+**FileFieldViewModel Example:**
+```csharp
+// Entity property is string? — stores combined "filename\nbase64dataurl" format.
+// The View splits/combines transparently using FileFieldViewModel.ExtractFileName/ExtractDataUrl/Combine.
+public FileFieldViewModel Cv => _cvField ??= new FileFieldViewModel(
+    parent: this,
+    getValue: () => _entity.Cv ?? string.Empty,
+    setValue: value => _entity.Cv = string.IsNullOrEmpty(value) ? null : value)
+{
+    Label = "CV",
+    Accept = ".pdf,.doc,.docx"  // File type filter (null = all types)
+};
+```
+**Storage format:** `filename\ndata:mime;base64,...` in a single `string?` column. Requires `MaximumReceiveMessageSize` in Program.cs for large files (default: 10 MB).
+**Download:** Built-in download icon button appears when a file is present.
 
 ### CollectionFieldViewModel Pattern
 
@@ -497,6 +528,11 @@ The application uses **Radzen Blazor** as the UI component library (no Bootstrap
 
 ### Setup in Program.cs
 ```csharp
+builder.Services.AddServerSideBlazor()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB (for file uploads)
+    });
 builder.Services.AddRadzenComponents();
 ```
 
@@ -537,6 +573,8 @@ builder.Services.AddRadzenComponents();
 | `DateTimeFieldView` | `DateTimeFieldViewModel` | RadzenDatePicker |
 | `TimeSpanFieldView` | `TimeSpanFieldViewModel` | RadzenTimeSpanPicker |
 | `ReferenceFieldView` | `ReferenceFieldViewModel<T>` | RadzenDropDown |
+| `HtmlFieldView` | `HtmlFieldViewModel` | RadzenHtmlEditor |
+| `FileFieldView` | `FileFieldViewModel` | RadzenFileInput (TValue=string) |
 | `CollectionFieldView` | `CollectionFieldViewModel<T>` | RadzenDataGrid |
 | `AutoFormView` | Any ViewModel | RadzenCard (groups), RadzenStack |
 | `CommandView` | `CommandViewModel` | RadzenButton |
@@ -620,6 +658,7 @@ For each `CollectionFieldViewModel<T>` discovered, a `GetAll{CollectionName}` to
 - `TimeSpan` → "hh:mm:ss" format
 - `ReferenceFieldViewModel<T>` → referenced entity's ID (not full object)
 - `CollectionFieldViewModel<T>` → count only
+- `FileFieldViewModel` → file name only (not the base64 content)
 
 ### Adding MCP Support to New Entities
 
