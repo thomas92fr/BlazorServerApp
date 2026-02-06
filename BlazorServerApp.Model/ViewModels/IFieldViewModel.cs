@@ -26,6 +26,11 @@ public interface IFieldViewModel
     bool HiddenInColumn { get; set; }
 
     /// <summary>
+    /// If true, this field is not displayed in the UI (form or table).
+    /// </summary>
+    bool HiddenInUI { get; set; }
+
+    /// <summary>
     /// Display order in table columns. Lower values appear first.
     /// Default is 0.
     /// </summary>

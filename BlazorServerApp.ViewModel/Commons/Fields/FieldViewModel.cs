@@ -32,6 +32,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     private bool _readOnly;
     private string? _columnWidth;
     private bool _hiddenInColumn;
+    private bool _hiddenInUI;
     private int _columnOrder;
     private string? _formGroupHeader;
     private int _formGroupOrder;
@@ -86,7 +87,8 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
                 return; // Silent return, ReadOnly already handles UI
             }
 
-            if (ReadOnly) return;
+            // On autorise la modification, via le code , même si ReadOnly = true, pour permettre les modifications par le code (ex: calculé dans le VM), mais pas par l'utilisateur via l'UI.
+            //if (ReadOnly) return;
 
             // Validate list constraint
             if (ValueMustBeInTheList && List != null && value != null && !List.Contains(value))
@@ -190,6 +192,15 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
     {
         get => _hiddenInColumn;
         set => SetProperty(ref _hiddenInColumn, value);
+    }
+
+    /// <summary>
+    /// If true, this field is not displayed in the UI (form or table).
+    /// </summary>
+    public bool HiddenInUI
+    {
+        get => _hiddenInUI;
+        set => SetProperty(ref _hiddenInUI, value);
     }
 
     /// <summary>

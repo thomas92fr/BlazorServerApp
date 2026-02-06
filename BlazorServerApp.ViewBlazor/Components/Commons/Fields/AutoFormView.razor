@@ -114,6 +114,10 @@
             if (field == null)
                 continue;
 
+            // Hide fields marked as HiddenInUI
+            if (field.HiddenInUI)
+                continue;
+
             // Apply HiddenInColumn filter if requested
             if (RespectHiddenInColumn && field.HiddenInColumn)
                 continue;

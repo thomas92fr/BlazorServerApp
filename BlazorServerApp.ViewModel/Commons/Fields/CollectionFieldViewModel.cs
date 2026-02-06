@@ -37,6 +37,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private string? _warning;
     private string? _columnWidth;
     private bool _hiddenInColumn;
+    private bool _hiddenInUI;
     private int _columnOrder;
     private string? _formGroupHeader;
     private int _formGroupOrder;
@@ -169,6 +170,12 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     {
         get => _hiddenInColumn;
         set => SetProperty(ref _hiddenInColumn, value);
+    }
+
+    public bool HiddenInUI
+    {
+        get => _hiddenInUI;
+        set => SetProperty(ref _hiddenInUI, value);
     }
 
     public int ColumnOrder
