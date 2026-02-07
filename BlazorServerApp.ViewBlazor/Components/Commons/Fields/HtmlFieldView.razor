@@ -1,5 +1,6 @@
 @using BlazorServerApp.ViewModel.Commons.Fields
 @inject TooltipService TooltipService
+@inject DialogService DialogService
 
 <div class="rz-mb-3">
     @if (!string.IsNullOrEmpty(Field?.Label))
@@ -11,6 +12,9 @@
                 <RadzenIcon Icon="info" Style="cursor: help; color: var(--rz-text-tertiary-color); font-size: 18px; line-height: 1;"
                             MouseEnter="@(args => ShowHintTooltip(args))" />
             }
+            <RadzenIcon Icon="open_in_full" @onclick="OpenInDialog"
+                        Style="cursor: pointer; color: var(--rz-text-tertiary-color); font-size: 18px; line-height: 1;"
+                        MouseEnter="@(args => TooltipService.Open(args, "Open in dialog"))" />
         </div>
     }
 
@@ -51,6 +55,7 @@
     public EventCallback<string> ValueChanged { get; set; }
 
     private string? _htmlValue;
+    private string? _dialogHtmlValue;
 
     protected override void OnParametersSet()
     {
@@ -64,6 +69,36 @@
         {
             Field.Value = html ?? string.Empty;
             await ValueChanged.InvokeAsync(html ?? string.Empty);
+        }
+    }
+
+    private async Task OpenInDialog()
+    {
+        _dialogHtmlValue = _htmlValue;
+
+        var result = await DialogService.OpenAsync(Field?.Label ?? "HTML Editor", ds =>
+            @<div style="display: flex; flex-direction: column; min-height: 0; height: 100%;">
+                <RadzenHtmlEditor Value="@_dialogHtmlValue"
+                                  Change="@(v => _dialogHtmlValue = v)"
+                                  Style="flex: 1;"
+                                  Disabled="@(Field?.ReadOnly ?? false)"
+                                  UploadUrl="@Field?.UploadUrl" />
+                <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                    <RadzenButton Text="OK" ButtonStyle="ButtonStyle.Primary" Click="() => ds.Close(true)" />
+                </div>
+            </div>,
+            new DialogOptions
+            {
+                Resizable = true,
+                Draggable = true,
+                Width = "90%",
+                Height = "90vh",
+                CloseDialogOnOverlayClick = true
+            });
+
+        if (result is true)
+        {
+            await OnChange(_dialogHtmlValue ?? string.Empty);
         }
     }
 
