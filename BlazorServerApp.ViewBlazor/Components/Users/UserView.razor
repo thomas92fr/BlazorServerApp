@@ -1,0 +1,11 @@
+@using BlazorServerApp.ViewModel.Users
+@inherits ViewModelComponentBase<UserViewModel>
+
+<RadzenCard Variant="Variant.Outlined">
+    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-mb-4"><strong>User Details</strong></RadzenText>
+    <AutoFormView ViewModel="@ViewModel" />
+</RadzenCard>
+
+@code {
+    // ViewModel is inherited from ViewModelComponentBase<UserViewModel>
+}

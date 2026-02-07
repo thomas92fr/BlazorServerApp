@@ -77,6 +77,39 @@ namespace BlazorServerApp.Model.Migrations
                     b.ToTable("Persons");
                 });
 
+            modelBuilder.Entity("BlazorServerApp.Model.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Deleted = false,
+                            Password = "$2a$11$47W/33oCRWXmEhGFMlhmnON9HhnB8wMvkyNxMpUzagzVkVbOg.D3G",
+                            UserName = "Admin"
+                        });
+                });
+
             modelBuilder.Entity("BlazorServerApp.Model.Entities.Person", b =>
                 {
                     b.HasOne("BlazorServerApp.Model.Entities.Person", "Mentor")

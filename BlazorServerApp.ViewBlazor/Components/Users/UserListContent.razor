@@ -1,0 +1,82 @@
+@using BlazorServerApp.Model.ViewModels
+@using BlazorServerApp.ViewModel.Users
+@using System.ComponentModel
+@implements IDisposable
+
+<RadzenText TextStyle="TextStyle.H4" class="rz-mb-4">@ViewModel.Title</RadzenText>
+
+<div class="rz-mb-3">
+    <CommandView Command="@ViewModel.SaveCommand" />
+    <CommandView Command="@ViewModel.DiscardCommand" />
+</div>
+
+@if (ViewModel.ValidationErrors != null && ViewModel.ValidationErrors.Any())
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger" Shade="Shade.Lighter" AllowClose="false" class="rz-mb-3">
+        <RadzenText TextStyle="TextStyle.Subtitle2">Validation Errors:</RadzenText>
+        @foreach (var group in ViewModel.ValidationErrors.GroupBy(e => e.ViewModel))
+        {
+            <div class="rz-mb-2">
+                <strong>@group.Key?.ToString()</strong>
+                <ul>
+                    @foreach (var error in group)
+                    {
+                        <li>@error.PropertyName: @error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(ViewModel.StatusMessage))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Success" Shade="Shade.Lighter" AllowClose="false" class="rz-mb-3">
+        @ViewModel.StatusMessage
+    </RadzenAlert>
+}
+
+<RadzenRow Gap="1rem">
+    <RadzenColumn Size="12" SizeMD="6">
+        <CollectionFieldView T="UserViewModel"
+                             Field="@ViewModel.Users"
+                             SelectedItemChanged="@OnUserSelected"
+                             EmptyMessage="No users found" />
+    </RadzenColumn>
+
+    <RadzenColumn Size="12" SizeMD="6">
+        @if (ViewModel.SelectedUser != null)
+        {
+            <UserView ViewModel="@ViewModel.SelectedUser" />
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: var(--rz-text-tertiary-color);">Select a user to view details</RadzenText>
+        }
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    [Parameter]
+    public UserListViewModel ViewModel { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnUserSelected(UserViewModel? user)
+    {
+        ViewModel.SelectedUser = user;
+    }
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+    }
+}

@@ -12,6 +12,7 @@
                             Selected="@ViewModel.IsHomeActive" />
         <RadzenPanelMenuItem Text="Data" Icon="storage">
             <RadzenPanelMenuItem Text="Persons" Icon="people" Value="@("persons")" />
+            <RadzenPanelMenuItem Text="Users" Icon="person" Value="@("users")" />
         </RadzenPanelMenuItem>
     </RadzenPanelMenu>
 </div>
@@ -31,6 +32,9 @@
                 break;
             case "persons":
                 ViewModel.CreateTab<PersonListViewModel>();
+                break;
+            case "users":
+                ViewModel.CreateTab<UserListViewModel>();
                 break;
         }
     }
