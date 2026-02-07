@@ -47,6 +47,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private bool _allowUpdate = true;
     private bool _allowDelete = true;
     private bool _allowMultiSelect = false;
+    private bool _allowInlineEdit = false;
 
     // Commands
     private CommandViewModel? _addCommand;
@@ -227,6 +228,15 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     {
         get => _allowMultiSelect;
         set => SetProperty(ref _allowMultiSelect, value);
+    }
+
+    /// <summary>
+    /// If true, cells can be edited inline by clicking on them.
+    /// </summary>
+    public bool AllowInlineEdit
+    {
+        get => _allowInlineEdit && !ReadOnly;
+        set => SetProperty(ref _allowInlineEdit, value);
     }
 
     #endregion

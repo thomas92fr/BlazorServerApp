@@ -31,6 +31,7 @@ public partial class PersonListViewModel : RootViewModel
             AllowAdd = true,
             AllowDelete = true,
             AllowMultiSelect = true,
+            AllowInlineEdit = true,
             CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
             OnItemAdded = vm => { }, // Already tracked by UnitOfWork
             OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)

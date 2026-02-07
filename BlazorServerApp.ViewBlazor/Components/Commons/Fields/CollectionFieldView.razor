@@ -42,11 +42,14 @@
                     TItem="T"
                     Data="@Field?.Collection"
                     SelectionMode="@GetSelectionMode()"
-                    Value="@selectedItems"
-                    ValueChanged="@OnSelectionChanged"
+                    Value="@GetGridSelectedItems()"
+                    ValueChanged="@OnGridSelectionChanged"
                     AllowSorting="true"
                     AllowColumnResize="true"
-                    ShowCheckBoxColumn="@(Field?.AllowMultiSelect == true)"
+                    ShowCheckBoxColumn="@(Field?.AllowMultiSelect == true && Field?.AllowInlineEdit != true)"
+                    CellClick="@(Field?.AllowInlineEdit == true ? OnCellClick : null)"
+                    Sort="@(Field?.AllowInlineEdit == true ? OnSort : null)"
+                    RowUpdate="@OnRowUpdate"
                     class="@TableCssClass">
         <EmptyTemplate>
             <RadzenText TextStyle="TextStyle.Body2" class="rz-text-align-center rz-p-4">
@@ -54,19 +57,73 @@
             </RadzenText>
         </EmptyTemplate>
         <Columns>
+            @if (Field?.AllowInlineEdit == true)
+            {
+                <RadzenDataGridColumn TItem="T" Width="40px" Sortable="false" Filterable="false"
+                                      Resizable="false" Title="" TextAlign="TextAlign.Center">
+                    <HeaderTemplate>
+                        @if (Field.AllowMultiSelect)
+                        {
+                            <RadzenCheckBox TValue="bool"
+                                            Value="@(Field.SelectedCount > 0 && Field.SelectedCount == Field.Count)"
+                                            ValueChanged="@OnSelectAllCheckboxChanged" />
+                        }
+                    </HeaderTemplate>
+                    <Template Context="item">
+                        <RadzenCheckBox TValue="bool"
+                                        Value="@Field.IsSelected(item)"
+                                        ValueChanged="@((bool v) => OnRowCheckboxChanged(item, v))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            }
             @if (Field?.ColumnProperties != null)
             {
                 @foreach (var prop in Field.ColumnProperties)
                 {
-                    var fieldMeta = GetFieldMetadata(prop);
+                    var capturedProp = prop;
+                    var fieldMeta = GetFieldMetadata(capturedProp);
                     <RadzenDataGridColumn TItem="T"
                                           Title="@fieldMeta.Label"
                                           Width="@fieldMeta.Width"
-                                          Property="@($"{prop.Name}.Value")"
-                                          Sortable="true">
+                                          Property="@($"{capturedProp.Name}.Value")"
+                                          Sortable="true"
+                                          IsInEditMode="@(Field.AllowInlineEdit ? IsEditing : null)">
                         <Template Context="item">
-                            @GetFieldValueFromProperty(item, prop)
+                            @{
+                                var readFieldVm = capturedProp.GetValue(item) as IFieldViewModel;
+                            }
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis;">@GetFieldValueFromProperty(item, capturedProp)</span>
+                                @if (!string.IsNullOrEmpty(readFieldVm?.Error))
+                                {
+                                    <RadzenIcon Icon="error" Style="color: var(--rz-danger); font-size: 1rem; cursor: help; flex-shrink: 0;"
+                                                MouseEnter="@(args => TooltipService.Open(args, readFieldVm.Error, new TooltipOptions { Style = "background: var(--rz-danger); color: white;" }))" />
+                                }
+                                else if (!string.IsNullOrEmpty(readFieldVm?.Warning))
+                                {
+                                    <RadzenIcon Icon="warning" Style="color: var(--rz-warning); font-size: 1rem; cursor: help; flex-shrink: 0;"
+                                                MouseEnter="@(args => TooltipService.Open(args, readFieldVm.Warning, new TooltipOptions { Style = "background: var(--rz-warning); color: black;" }))" />
+                                }
+                            </div>
                         </Template>
+                        <EditTemplate Context="editItem">
+                            @{
+                                var editFieldVm = capturedProp.GetValue(editItem) as IFieldViewModel;
+                            }
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <div style="flex: 1;">@RenderInlineEditor(editItem, capturedProp)</div>
+                                @if (!string.IsNullOrEmpty(editFieldVm?.Error))
+                                {
+                                    <RadzenIcon Icon="error" Style="color: var(--rz-danger); font-size: 1rem; cursor: help; flex-shrink: 0;"
+                                                MouseEnter="@(args => TooltipService.Open(args, editFieldVm.Error, new TooltipOptions { Style = "background: var(--rz-danger); color: white;" }))" />
+                                }
+                                else if (!string.IsNullOrEmpty(editFieldVm?.Warning))
+                                {
+                                    <RadzenIcon Icon="warning" Style="color: var(--rz-warning); font-size: 1rem; cursor: help; flex-shrink: 0;"
+                                                MouseEnter="@(args => TooltipService.Open(args, editFieldVm.Warning, new TooltipOptions { Style = "background: var(--rz-warning); color: black;" }))" />
+                                }
+                            </div>
+                        </EditTemplate>
                     </RadzenDataGridColumn>
                 }
             }
@@ -131,6 +188,10 @@
     private CollectionFieldViewModel<T>? _previousField;
     private IList<T>? selectedItems = new List<T>();
     private bool _isSyncing = false;
+
+    // Inline editing state
+    private T? _editingItem;
+    private string? _editingColumn;
 
     [Parameter]
     public CollectionFieldViewModel<T>? Field { get; set; }
@@ -219,13 +280,28 @@
 
     private DataGridSelectionMode GetSelectionMode()
     {
+        // When inline editing is active, use Single to avoid click-to-select interference
+        if (Field?.AllowInlineEdit == true)
+            return DataGridSelectionMode.Single;
+
         return Field?.AllowMultiSelect == true
             ? DataGridSelectionMode.Multiple
             : DataGridSelectionMode.Single;
     }
 
-    private void OnSelectionChanged(IList<T>? newSelection)
+    private IList<T>? GetGridSelectedItems()
     {
+        // When inline editing is active, don't bind selection to the grid
+        // (selection is managed by manual checkboxes)
+        return Field?.AllowInlineEdit == true ? new List<T>() : selectedItems;
+    }
+
+    private void OnGridSelectionChanged(IList<T>? newSelection)
+    {
+        // When inline editing is active, ignore grid selection changes
+        // (selection is managed by manual checkboxes)
+        if (Field?.AllowInlineEdit == true) return;
+
         selectedItems = newSelection ?? new List<T>();
 
         if (Field == null) return;
@@ -273,6 +349,63 @@
         }
     }
 
+    #region Checkbox Selection (inline edit mode)
+
+    private void OnRowCheckboxChanged(T item, bool selected)
+    {
+        if (Field == null) return;
+
+        try
+        {
+            _isSyncing = true;
+
+            if (Field.AllowMultiSelect)
+            {
+                Field.ToggleSelection(item);
+            }
+            else
+            {
+                if (selected)
+                    Field.Select(item);
+                else
+                    Field.ClearSelection();
+            }
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+
+        SelectedItemChanged.InvokeAsync(Field.SelectedItem);
+        if (Field.AllowMultiSelect)
+        {
+            SelectedItemsChanged.InvokeAsync(Field.SelectedItems.ToList());
+        }
+    }
+
+    private void OnSelectAllCheckboxChanged(bool selectAll)
+    {
+        if (Field == null) return;
+
+        try
+        {
+            _isSyncing = true;
+
+            if (selectAll)
+                Field.SelectAll();
+            else
+                Field.ClearSelection();
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+
+        SelectedItemsChanged.InvokeAsync(Field.SelectedItems.ToList());
+    }
+
+    #endregion
+
     private void DeleteItem(T item)
     {
         Field?.DeleteCommand.Command.Execute(item);
@@ -302,6 +435,180 @@
         }
         return string.Empty;
     }
+
+    #region Inline Editing
+
+    private bool IsEditing(string columnName, T item)
+    {
+        return _editingColumn == columnName
+            && EqualityComparer<T>.Default.Equals(_editingItem, item);
+    }
+
+    private async Task OnCellClick(DataGridCellMouseEventArgs<T> args)
+    {
+        if (Field?.AllowInlineEdit != true || grid == null) return;
+
+        // Skip if clicking the same cell already being edited
+        if (_editingItem != null
+            && EqualityComparer<T>.Default.Equals(_editingItem, args.Data)
+            && _editingColumn == args.Column.Property) return;
+
+        // Check if the field is editable
+        var prop = Field.ColumnProperties
+            .FirstOrDefault(p => $"{p.Name}.Value" == args.Column.Property);
+        if (prop != null)
+        {
+            var fieldVm = prop.GetValue(args.Data) as IFieldViewModel;
+            if (fieldVm is { ReadOnly: true } || fieldVm is { HasSetValueFunction: false })
+            {
+                // Commit any current edit and exit
+                if (_editingItem != null)
+                {
+                    await grid.UpdateRow(_editingItem);
+                }
+                ResetEdit();
+                return;
+            }
+        }
+
+        // Commit previous edit
+        if (_editingItem != null)
+        {
+            await grid.UpdateRow(_editingItem);
+        }
+
+        // Auto-select the edited row
+        if (args.Data != null && !Field.IsSelected(args.Data))
+        {
+            Field.Select(args.Data);
+            await SelectedItemChanged.InvokeAsync(args.Data);
+        }
+
+        // Enter edit mode for the new cell
+        _editingColumn = args.Column.Property;
+        _editingItem = args.Data;
+        await grid.EditRow(args.Data);
+    }
+
+    private void OnSort(DataGridColumnSortEventArgs<T> args)
+    {
+        ResetEdit();
+    }
+
+    private void OnRowUpdate(T item)
+    {
+        ResetEdit();
+    }
+
+    private void ResetEdit()
+    {
+        _editingItem = default;
+        _editingColumn = null;
+    }
+
+    private RenderFragment RenderInlineEditor(T item, PropertyInfo prop) => __builder =>
+    {
+        var fieldVm = prop.GetValue(item);
+
+        if (fieldVm is StringFieldViewModel strField && !strField.ReadOnly && strField.HasSetValueFunction)
+        {
+            if (strField.List != null && strField.ValueMustBeInTheList)
+            {
+                __builder.OpenComponent<RadzenDropDown<string>>(0);
+                __builder.AddAttribute(1, "Data", strField.List);
+                __builder.AddAttribute(2, "Value", strField.Value);
+                __builder.AddAttribute(3, "ValueChanged",
+                    EventCallback.Factory.Create<string>(this, v => { strField.Value = v ?? string.Empty; }));
+                __builder.AddAttribute(4, "AllowClear", true);
+                __builder.AddAttribute(5, "AllowFiltering", true);
+                __builder.AddAttribute(6, "FilterCaseSensitivity", FilterCaseSensitivity.CaseInsensitive);
+                __builder.AddAttribute(7, "Style", "width:100%");
+                __builder.CloseComponent();
+            }
+            else if (strField.List != null)
+            {
+                __builder.OpenComponent<RadzenAutoComplete>(0);
+                __builder.AddAttribute(1, "Data", strField.List);
+                __builder.AddAttribute(2, "Value", strField.Value);
+                __builder.AddAttribute(3, "Change",
+                    EventCallback.Factory.Create<string>(this, v => { strField.Value = v ?? string.Empty; }));
+                __builder.AddAttribute(4, "FilterCaseSensitivity", FilterCaseSensitivity.CaseInsensitive);
+                __builder.AddAttribute(5, "Style", "width:100%");
+                __builder.CloseComponent();
+            }
+            else
+            {
+                __builder.OpenComponent<RadzenTextBox>(0);
+                __builder.AddAttribute(1, "Value", strField.Value);
+                __builder.AddAttribute(2, "ValueChanged",
+                    EventCallback.Factory.Create<string>(this, v => { strField.Value = v ?? string.Empty; }));
+                __builder.AddAttribute(3, "Style", "width:100%");
+                __builder.CloseComponent();
+            }
+        }
+        else if (fieldVm is DecimalFieldViewModel decField && !decField.ReadOnly && decField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenNumeric<decimal>>(0);
+            __builder.AddAttribute(1, "Value", decField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<decimal>(this, v => { decField.Value = v; }));
+            __builder.AddAttribute(3, "Format", decField.Format);
+            __builder.AddAttribute(4, "Step", decField.Step.ToString());
+            if (decField.Min.HasValue)
+                __builder.AddAttribute(5, "Min", decField.Min.Value);
+            if (decField.Max.HasValue)
+                __builder.AddAttribute(6, "Max", decField.Max.Value);
+            __builder.AddAttribute(7, "Style", "width:100%");
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is IntegerSliderFieldViewModel sliderField && !sliderField.ReadOnly && sliderField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenNumeric<int>>(0);
+            __builder.AddAttribute(1, "Value", sliderField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<int>(this, v => { sliderField.Value = v; }));
+            __builder.AddAttribute(3, "Min", (decimal)sliderField.Min);
+            __builder.AddAttribute(4, "Max", (decimal)sliderField.Max);
+            __builder.AddAttribute(5, "Step", sliderField.Step.ToString());
+            __builder.AddAttribute(6, "Style", "width:100%");
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is IntegerFieldViewModel intField && !intField.ReadOnly && intField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenNumeric<int>>(0);
+            __builder.AddAttribute(1, "Value", intField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<int>(this, v => { intField.Value = v; }));
+            __builder.AddAttribute(3, "Style", "width:100%");
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is BoolFieldViewModel boolField && !boolField.ReadOnly && boolField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenCheckBox<bool>>(0);
+            __builder.AddAttribute(1, "Value", boolField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<bool>(this, v => { boolField.Value = v; }));
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is DateTimeFieldViewModel dateField && !dateField.ReadOnly && dateField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenDatePicker<DateTime>>(0);
+            __builder.AddAttribute(1, "Value", dateField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<DateTime>(this, v => { dateField.Value = v; }));
+            __builder.AddAttribute(3, "ShowTime", true);
+            __builder.AddAttribute(4, "DateFormat", "dd/MM/yyyy HH:mm");
+            __builder.AddAttribute(5, "Style", "width:100%");
+            __builder.CloseComponent();
+        }
+        else
+        {
+            // Fallback: render read-only text for unsupported or read-only fields
+            __builder.AddContent(0, GetFieldValueFromProperty(item, prop));
+        }
+    };
+
+    #endregion
 
     public void Dispose()
     {
