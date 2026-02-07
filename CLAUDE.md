@@ -41,6 +41,7 @@ BlazorServerApp.Model/
 ├── Entities/                      # Domain entities (implement IEntity)
 ├── Repositories/                  # IGenericRepository<T>, GenericRepository<T>
 ├── UnitOfWork/                    # IUnitOfWork, IUnitOfWorkFactory, UnitOfWork, UnitOfWorkFactory
+├── Query/                         # JQL-like text query engine (Lexer, Parser, ExpressionBuilder)
 ├── ViewModels/                    # Interfaces: IFieldViewModel, IEntityViewModel, IViewModel, IRootViewModel
 ├── Factories/                     # IEntityViewModelFactory, DefaultEntityViewModelFactory
 └── DependencyInjection.cs
@@ -216,17 +217,20 @@ For managing collections of ViewModels with table rendering:
 ```csharp
 public CollectionFieldViewModel<PersonViewModel> Persons => _personsField ??= new CollectionFieldViewModel<PersonViewModel>(
     parent: this,
-    query: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>())
+    query: filterText => UnitOfWork.GetFilteredViewModelsFromTextQuery<Person, PersonViewModel>(filterText))
 {
     Label = "Persons",
     AllowAdd = true,
     AllowDelete = true,
     AllowMultiSelect = true,   // Enable Ctrl+Click, Shift+Click selection
+    AllowFilter = true,        // Enable JQL-like text filter bar
     CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
     OnItemAdded = vm => { /* Track new entity */ },
     OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
 };
 ```
+
+The `query` delegate receives a `string? filterText` parameter: `null` means load all, non-null means apply text filter. `GetFilteredViewModelsFromTextQuery` handles both cases internally.
 
 **Features:**
 - ObservableCollection with lazy loading via query
@@ -235,7 +239,8 @@ public CollectionFieldViewModel<PersonViewModel> Persons => _personsField ??= ne
 - Single selection (`SelectedItem`) and multi-selection (`SelectedItems`)
 - Multi-select: Ctrl+Click toggle, Shift+Click range, checkbox column with select-all
 - CRUD delegates: `CreateItem`, `OnItemAdded`, `OnItemDeleted`
-- Permissions: `AllowAdd`, `AllowUpdate`, `AllowDelete`, `AllowMultiSelect`, `AllowInlineEdit`
+- Permissions: `AllowAdd`, `AllowUpdate`, `AllowDelete`, `AllowMultiSelect`, `AllowInlineEdit`, `AllowFilter`
+- Text filtering: JQL-like query syntax with `AllowFilter = true` (see Query Engine section)
 
 ### AutoFormView Component
 
@@ -353,6 +358,9 @@ var viewModel = new ProductListViewModel(unitOfWork);
 var vm = UnitOfWork.GetViewModel<Person, PersonViewModel>(entity);
 var all = UnitOfWork.GetAllViewModels<Person, PersonViewModel>();
 var newVm = UnitOfWork.GetNewViewModel<Person, PersonViewModel>();
+
+// Filtered queries (JQL-like syntax, null = all)
+var filtered = UnitOfWork.GetFilteredViewModelsFromTextQuery<Person, PersonViewModel>("age > 30 AND name contains \"John\"");
 
 // CRUD
 UnitOfWork.DeleteEntity(entity);
@@ -496,8 +504,9 @@ public class ProductListViewModel : RootViewModel
     public CollectionFieldViewModel<ProductViewModel> Products => _productsField ??=
         new CollectionFieldViewModel<ProductViewModel>(
             parent: this,
-            query: () => UnitOfWork.GetAllViewModels<Product, ProductViewModel>())
+            query: filterText => UnitOfWork.GetFilteredViewModelsFromTextQuery<Product, ProductViewModel>(filterText))
         {
+            AllowFilter = true,
             CreateItem = () => UnitOfWork.GetNewViewModel<Product, ProductViewModel>(),
             OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
         };
@@ -631,6 +640,42 @@ All field views use `RadzenFormField` with `Variant.Outlined`:
     <RadzenAlert AlertStyle="AlertStyle.Danger" ... />
 }
 ```
+
+## Query Engine (JQL-like Text Filtering)
+
+The application includes a text query engine in `BlazorServerApp.Model/Query/` that parses JQL-like queries into `Expression<Func<TEntity, bool>>` for EF Core server-side filtering.
+
+### Architecture
+
+```
+QueryEngine (facade)
+  └── QueryLexer → Token[]
+       └── QueryParser → AST (QueryNode)
+            └── ExpressionBuilder → Expression<Func<TEntity, bool>>
+```
+
+### Supported Syntax
+
+| Feature | Example |
+|---------|---------|
+| Comparison | `age = 30`, `age > 18`, `age <= 65` |
+| String operators | `name contains "John"`, `name startsWith "A"`, `name endsWith "son"` |
+| Null checks | `mentor is null`, `mentor is not null` |
+| IN operator | `age in (25, 30, 35)` |
+| Boolean logic | `age > 18 AND isTeacher = true` |
+| OR logic | `name = "Alice" OR name = "Bob"` |
+| NOT | `NOT isTeacher = true` |
+| Parentheses | `(age > 18 OR age < 10) AND name contains "A"` |
+| Navigation properties | `Mentor.Age = 42`, `Mentor.Name contains "John"` |
+| Multi-level navigation | `Mentor.Mentor.Name = "Alice"` |
+
+### Usage
+
+Integrated via `IUnitOfWork.GetFilteredViewModelsFromTextQuery<TEntity, TViewModel>(string? queryText)`:
+- If `queryText` is `null` or whitespace, returns all entities (equivalent to `GetAllViewModels`)
+- Otherwise parses the query and applies it server-side via EF Core
+
+Used by `CollectionFieldViewModel` when `AllowFilter = true`: the filter bar passes user input as `filterText` to the `query` delegate.
 
 ## MCP Server (Model Context Protocol)
 
