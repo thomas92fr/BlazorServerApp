@@ -25,7 +25,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private T? _selectedItem;
     private T? _lastClickedItem; // Anchor for Shift+Click range selection
     private ObservableCollection<T>? _selectedItems;
-    private readonly Func<IEnumerable<T>>? _query;
+    private readonly Func<string?, IEnumerable<T>>? _query;
     private bool _isInitialized;
     private List<PropertyInfo>? _columnProperties;
 
@@ -48,6 +48,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private bool _allowDelete = true;
     private bool _allowMultiSelect = false;
     private bool _allowInlineEdit = false;
+    private bool _allowFilter = false;
 
     // Filter
     private string? _filterText;
@@ -66,7 +67,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
 
     public CollectionFieldViewModel(
         object? parent = null,
-        Func<IEnumerable<T>>? query = null)
+        Func<string?, IEnumerable<T>>? query = null)
     {
         Parent = parent;
         _query = query;
@@ -87,7 +88,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
         {
             if (!_isInitialized && _query != null)
             {
-                _collection = new ObservableCollection<T>(_query());
+                _collection = new ObservableCollection<T>(_query(null));
                 _collection.CollectionChanged += OnCollectionChanged;
                 _isInitialized = true;
             }
@@ -246,6 +247,16 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
         set => SetProperty(ref _allowInlineEdit, value);
     }
 
+    /// <summary>
+    /// If true, the filter bar is displayed above the collection.
+    /// The query delegate receives the filter text when a filter is applied.
+    /// </summary>
+    public bool AllowFilter
+    {
+        get => _allowFilter;
+        set => SetProperty(ref _allowFilter, value);
+    }
+
     #endregion
 
     #region Filter
@@ -278,18 +289,12 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     }
 
     /// <summary>
-    /// Délégué fourni par le consommateur pour exécuter la requête filtrée.
-    /// Reçoit le texte du filtre et retourne les résultats filtrés.
-    /// </summary>
-    public Func<string, IEnumerable<T>>? FilteredQuery { get; set; }
-
-    /// <summary>
-    /// Applique le filtre courant. Si FilteredQuery est null ou FilterText est vide,
-    /// recharge via _query normal.
+    /// Applique le filtre courant. Si AllowFilter est false ou FilterText est vide,
+    /// recharge via _query(null).
     /// </summary>
     public void ApplyFilter()
     {
-        if (string.IsNullOrWhiteSpace(FilterText) || FilteredQuery == null)
+        if (string.IsNullOrWhiteSpace(FilterText) || !AllowFilter || _query == null)
         {
             ClearFilter();
             return;
@@ -297,14 +302,14 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
 
         try
         {
-            var results = FilteredQuery(FilterText);
+            var results = _query(FilterText);
 
             if (_collection != null)
             {
                 _collection.CollectionChanged -= OnCollectionChanged;
             }
 
-            _collection = new System.Collections.ObjectModel.ObservableCollection<T>(results);
+            _collection = new ObservableCollection<T>(results);
             _collection.CollectionChanged += OnCollectionChanged;
             _isInitialized = true;
 
@@ -348,7 +353,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
         text: "Filter",
         hint: "Apply the filter query",
         execute: ApplyFilter,
-        canExecute: () => FilteredQuery != null && !string.IsNullOrWhiteSpace(FilterText),
+        canExecute: () => AllowFilter && !string.IsNullOrWhiteSpace(FilterText),
         style: CommandStyle.Info
     );
 
@@ -569,7 +574,7 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
             _collection.CollectionChanged -= OnCollectionChanged;
         }
 
-        _collection = new ObservableCollection<T>(_query());
+        _collection = new ObservableCollection<T>(_query(HasActiveFilter ? FilterText : null));
         _collection.CollectionChanged += OnCollectionChanged;
         _isInitialized = true;
 

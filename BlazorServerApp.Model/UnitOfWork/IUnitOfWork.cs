@@ -59,10 +59,10 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Loads entities matching a text query (JQL-like syntax) and returns their ViewModels.
-    /// The text query is parsed into an Expression and applied server-side via EF Core.
+    /// If queryText is null or whitespace, returns all entities (equivalent to GetAllViewModels).
     /// </summary>
     IEnumerable<TViewModel> GetFilteredViewModelsFromTextQuery<TEntity, TViewModel>(
-        string queryText)
+        string? queryText)
         where TEntity : class, IEntity
         where TViewModel : class, IEntityViewModel<TEntity>;
 

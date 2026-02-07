@@ -37,12 +37,13 @@
         </RadzenStack>
     }
 
-    @* Filter bar — affiché seulement si FilteredQuery est configuré *@
-    @if (Field?.FilteredQuery != null)
+    @* Filter bar — affiché seulement si AllowFilter est activé *@
+    @if (Field?.AllowFilter == true)
     {
         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" class="rz-mb-2"
                      AlignItems="AlignItems.Center">
-            <RadzenTextBox @bind-Value="@filterText"
+            <RadzenTextBox Value="@filterText"
+                           @oninput="@(args => filterText = args.Value?.ToString())"
                            Placeholder="Filter (ex: name contains &quot;John&quot; AND age > 30)"
                            Style="flex: 1"
                            @onkeydown="OnFilterKeyDown" />

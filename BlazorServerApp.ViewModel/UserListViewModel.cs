@@ -23,7 +23,7 @@ public partial class UserListViewModel : RootViewModel
     public CollectionFieldViewModel<UserViewModel> Users =>
         _usersField ??= new CollectionFieldViewModel<UserViewModel>(
             parent: this,
-            query: () => UnitOfWork.GetAllViewModels<User, UserViewModel>())
+            query: _ => UnitOfWork.GetAllViewModels<User, UserViewModel>())
         {
             Label = "Users",
             AllowAdd = true,

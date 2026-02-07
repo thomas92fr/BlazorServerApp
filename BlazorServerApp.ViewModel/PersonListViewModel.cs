@@ -25,18 +25,17 @@ public partial class PersonListViewModel : RootViewModel
     public CollectionFieldViewModel<PersonViewModel> Persons =>
         _personsField ??= new CollectionFieldViewModel<PersonViewModel>(
             parent: this,
-            query: () => UnitOfWork.GetAllViewModels<Person, PersonViewModel>())
+            query: filterText => UnitOfWork.GetFilteredViewModelsFromTextQuery<Person, PersonViewModel>(filterText))
         {
             Label = "Persons",
             AllowAdd = true,
             AllowDelete = true,
             AllowMultiSelect = true,
             AllowInlineEdit = true,
+            AllowFilter = true,
             CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
             OnItemAdded = vm => { }, // Already tracked by UnitOfWork
-            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model),
-            FilteredQuery = filterText =>
-                UnitOfWork.GetFilteredViewModelsFromTextQuery<Person, PersonViewModel>(filterText)
+            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
         };
 
     /// <summary>
