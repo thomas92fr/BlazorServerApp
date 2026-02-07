@@ -1,4 +1,4 @@
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Exception levée lors d'une erreur de parsing de requête.

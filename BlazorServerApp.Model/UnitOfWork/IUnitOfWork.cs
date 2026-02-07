@@ -58,6 +58,15 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
         where TViewModel : class, IEntityViewModel<TEntity>;
 
     /// <summary>
+    /// Loads entities matching a text query (JQL-like syntax) and returns their ViewModels.
+    /// The text query is parsed into an Expression and applied server-side via EF Core.
+    /// </summary>
+    IEnumerable<TViewModel> GetFilteredViewModelsFromTextQuery<TEntity, TViewModel>(
+        string queryText)
+        where TEntity : class, IEntity
+        where TViewModel : class, IEntityViewModel<TEntity>;
+
+    /// <summary>
     /// Creates a new entity and returns its ViewModel.
     /// Entity is not persisted until SaveAll() is called.
     /// </summary>

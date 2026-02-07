@@ -1,4 +1,4 @@
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Représente un token produit par le lexer.

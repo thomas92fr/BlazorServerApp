@@ -1,4 +1,4 @@
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Types de tokens pour le langage de requête.

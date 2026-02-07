@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using BlazorServerApp.Model.Data;
 using BlazorServerApp.Model.Entities;
 using BlazorServerApp.Model.Factories;
+using BlazorServerApp.Model.Query;
 using BlazorServerApp.Model.Repositories;
 using BlazorServerApp.Model.ViewModels;
 
@@ -36,6 +37,9 @@ public class UnitOfWork : IUnitOfWork
 
     // Factory cache: ViewModel Type -> Factory instance
     private readonly ConcurrentDictionary<Type, object> _factories = new();
+
+    // Query engine for text-based filtering
+    private static readonly QueryEngine _queryEngine = new();
 
     // Async safety: One operation at a time
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -166,6 +170,19 @@ public class UnitOfWork : IUnitOfWork
         {
             _semaphore.Release();
         }
+    }
+
+    /// <summary>
+    /// Loads entities matching a text query (JQL-like syntax) and returns their ViewModels.
+    /// The text query is parsed into an Expression and applied server-side via EF Core.
+    /// </summary>
+    public IEnumerable<TViewModel> GetFilteredViewModelsFromTextQuery<TEntity, TViewModel>(
+        string queryText)
+        where TEntity : class, IEntity
+        where TViewModel : class, IEntityViewModel<TEntity>
+    {
+        var expression = _queryEngine.BuildFilter<TEntity>(queryText);
+        return GetFilteredViewModels<TEntity, TViewModel>(expression);
     }
 
     /// <summary>

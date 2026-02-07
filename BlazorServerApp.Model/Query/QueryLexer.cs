@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Tokenizer pour le langage de requête.

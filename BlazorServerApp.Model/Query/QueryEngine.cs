@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Façade principale du moteur de requêtes.

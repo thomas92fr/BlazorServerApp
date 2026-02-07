@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Convertit un AST (QueryNode) en Expression&lt;Func&lt;TEntity, bool&gt;&gt; pour EF Core.

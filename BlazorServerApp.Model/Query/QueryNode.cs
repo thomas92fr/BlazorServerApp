@@ -1,4 +1,4 @@
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Noeud de base de l'arbre syntaxique abstrait (AST).

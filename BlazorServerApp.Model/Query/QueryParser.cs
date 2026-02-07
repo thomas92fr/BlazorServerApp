@@ -1,4 +1,4 @@
-namespace BlazorServerApp.ViewModel.Commons.Fields.Query;
+namespace BlazorServerApp.Model.Query;
 
 /// <summary>
 /// Parser recursive descent qui convertit une liste de tokens en AST.
