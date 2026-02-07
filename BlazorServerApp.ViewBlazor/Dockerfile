@@ -33,6 +33,7 @@ VOLUME /data
 # Configuration par défaut (surchargeable via docker run -e ou docker-compose)
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 ENV ConnectionStrings__DefaultConnection="Data Source=/data/BlazorApp.db"
 ENV OpenIdConnect__Authority="https://accounts.google.com"
 ENV OpenIdConnect__ClientId=""
