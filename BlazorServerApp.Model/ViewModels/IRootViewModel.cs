@@ -15,6 +15,11 @@ public interface IRootViewModel : IViewModel, IDisposable
     string Id { get; }
 
     /// <summary>
+    /// The UnitOfWork for data operations.
+    /// </summary>
+    IUnitOfWork UnitOfWork { get; }
+
+    /// <summary>
     /// Display title for the tab.
     /// </summary>
     string Title { get; set; }

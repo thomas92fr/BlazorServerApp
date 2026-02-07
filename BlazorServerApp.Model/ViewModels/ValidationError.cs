@@ -12,6 +12,6 @@ public class ValidationError
 
     public override string ToString()
     {
-        return $"{PropertyName}: {ErrorMessage}";
+        return $"{ViewModel}: {PropertyName}: {ErrorMessage}";
     }
 }

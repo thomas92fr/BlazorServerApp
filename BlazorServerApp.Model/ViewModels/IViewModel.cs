@@ -1,18 +1,11 @@
-using BlazorServerApp.Model.UnitOfWork;
-
 namespace BlazorServerApp.Model.ViewModels;
 
 /// <summary>
 /// Base interface for all ViewModels.
-/// Provides access to UnitOfWork for data operations.
+/// Provides access to the root ViewModel for tab context.
 /// </summary>
 public interface IViewModel
 {
-    /// <summary>
-    /// The UnitOfWork for data operations.
-    /// </summary>
-    IUnitOfWork UnitOfWork { get; }
-
     /// <summary>
     /// The root ViewModel for this tab (null for legacy ViewModels or the root itself).
     /// </summary>

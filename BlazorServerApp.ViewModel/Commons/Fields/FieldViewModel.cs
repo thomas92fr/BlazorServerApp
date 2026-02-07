@@ -87,7 +87,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
                 return; // Silent return, ReadOnly already handles UI
             }
 
-            // On autorise la modification, via le code , même si ReadOnly = true, pour permettre les modifications par le code (ex: calculé dans le VM), mais pas par l'utilisateur via l'UI.
+            // On autorise la modification, via le code , mï¿½me si ReadOnly = true, pour permettre les modifications par le code (ex: calculï¿½ dans le VM), mais pas par l'utilisateur via l'UI.
             //if (ReadOnly) return;
 
             // Validate list constraint
@@ -109,7 +109,7 @@ public partial class FieldViewModel<T> : ObservableObject, IFieldViewModel
                     var entity = entityVm.Model;
                     if (entity != null)
                     {
-                        entityVm.UnitOfWork.MarkAsModified(entity);
+                        entityVm.RootViewModel?.UnitOfWork.MarkAsModified(entity);
                     }
                 }
 
