@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -134,6 +135,30 @@ public class UnitOfWork : IUnitOfWork
         try
         {
             var entities = _context.Set<TEntity>().ToList()
+                .Where(e => !e.Deleted).ToList();
+            return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)!).ToList();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Loads entities matching the filter expression and returns their ViewModels.
+    /// The filter is applied server-side (EF Core → SQL) before materialization.
+    /// </summary>
+    public IEnumerable<TViewModel> GetFilteredViewModels<TEntity, TViewModel>(
+        Expression<Func<TEntity, bool>> filter)
+        where TEntity : class, IEntity
+        where TViewModel : class, IEntityViewModel<TEntity>
+    {
+        _semaphore.Wait();
+        try
+        {
+            var entities = _context.Set<TEntity>()
+                .Where(filter)
+                .ToList()
                 .Where(e => !e.Deleted).ToList();
             return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)!).ToList();
         }

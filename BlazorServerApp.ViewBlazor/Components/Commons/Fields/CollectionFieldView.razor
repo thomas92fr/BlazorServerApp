@@ -37,6 +37,37 @@
         </RadzenStack>
     }
 
+    @* Filter bar — affiché seulement si FilteredQuery est configuré *@
+    @if (Field?.FilteredQuery != null)
+    {
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" class="rz-mb-2"
+                     AlignItems="AlignItems.Center">
+            <RadzenTextBox @bind-Value="@filterText"
+                           Placeholder="Filter (ex: name contains &quot;John&quot; AND age > 30)"
+                           Style="flex: 1"
+                           @onkeydown="OnFilterKeyDown" />
+            <RadzenButton Text="Filter" Icon="filter_alt"
+                          ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small"
+                          Click="ApplyFilter" />
+            @if (Field.HasActiveFilter)
+            {
+                <RadzenButton Text="Clear" Icon="clear"
+                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                              Click="ClearFilter" />
+                <RadzenText TextStyle="TextStyle.Body2">
+                    @Field.Count result(s)
+                </RadzenText>
+            }
+        </RadzenStack>
+        @if (!string.IsNullOrEmpty(Field.FilterError))
+        {
+            <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat"
+                         Size="AlertSize.Small" class="rz-mb-2">
+                @Field.FilterError
+            </RadzenAlert>
+        }
+    }
+
     @* RadzenDataGrid *@
     <RadzenDataGrid @ref="grid"
                     TItem="T"
@@ -192,6 +223,9 @@
     // Inline editing state
     private T? _editingItem;
     private string? _editingColumn;
+
+    // Filter state
+    private string? filterText;
 
     [Parameter]
     public CollectionFieldViewModel<T>? Field { get; set; }
@@ -627,6 +661,32 @@
             __builder.AddContent(0, GetFieldValueFromProperty(item, prop));
         }
     };
+
+    #endregion
+
+    #region Filter
+
+    private void ApplyFilter()
+    {
+        if (Field == null) return;
+        Field.FilterText = filterText;
+        Field.ApplyFilter();
+    }
+
+    private void ClearFilter()
+    {
+        if (Field == null) return;
+        filterText = null;
+        Field.ClearFilter();
+    }
+
+    private void OnFilterKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            ApplyFilter();
+        }
+    }
 
     #endregion
 

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using BlazorServerApp.Model.Entities;
 using BlazorServerApp.Model.Repositories;
 using BlazorServerApp.Model.ViewModels;
@@ -44,6 +45,15 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     /// Loads all entities and returns their ViewModels.
     /// </summary>
     IEnumerable<TViewModel> GetAllViewModels<TEntity, TViewModel>()
+        where TEntity : class, IEntity
+        where TViewModel : class, IEntityViewModel<TEntity>;
+
+    /// <summary>
+    /// Loads entities matching the filter expression and returns their ViewModels.
+    /// The filter is applied server-side (EF Core → SQL) before materialization.
+    /// </summary>
+    IEnumerable<TViewModel> GetFilteredViewModels<TEntity, TViewModel>(
+        Expression<Func<TEntity, bool>> filter)
         where TEntity : class, IEntity
         where TViewModel : class, IEntityViewModel<TEntity>;
 

@@ -6,6 +6,7 @@ using BlazorServerApp.Model.Entities;
 using BlazorServerApp.ViewModel.Commons.Bases;
 using BlazorServerApp.ViewModel.Persons;
 using BlazorServerApp.ViewModel.Commons.Fields;
+using BlazorServerApp.ViewModel.Commons.Fields.Query;
 
 namespace BlazorServerApp.ViewModel;
 
@@ -15,6 +16,8 @@ namespace BlazorServerApp.ViewModel;
 /// </summary>
 public partial class PersonListViewModel : RootViewModel
 {
+    private static readonly QueryEngine _queryEngine = new();
+
     #region Observable Properties
 
     /// <summary>
@@ -34,7 +37,12 @@ public partial class PersonListViewModel : RootViewModel
             AllowInlineEdit = true,
             CreateItem = () => UnitOfWork.GetNewViewModel<Person, PersonViewModel>(),
             OnItemAdded = vm => { }, // Already tracked by UnitOfWork
-            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model)
+            OnItemDeleted = vm => UnitOfWork.DeleteEntity(vm.Model),
+            FilteredQuery = filterText =>
+            {
+                var expression = _queryEngine.BuildFilter<Person>(filterText);
+                return UnitOfWork.GetFilteredViewModels<Person, PersonViewModel>(expression);
+            }
         };
 
     /// <summary>

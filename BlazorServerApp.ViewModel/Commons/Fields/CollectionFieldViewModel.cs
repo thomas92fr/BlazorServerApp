@@ -49,6 +49,11 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private bool _allowMultiSelect = false;
     private bool _allowInlineEdit = false;
 
+    // Filter
+    private string? _filterText;
+    private string? _filterError;
+    private bool _hasActiveFilter;
+
     // Commands
     private CommandViewModel? _addCommand;
     private CommandViewModel<T>? _deleteCommand;
@@ -56,6 +61,8 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
     private CommandViewModel? _refreshCommand;
     private CommandViewModel? _selectAllCommand;
     private CommandViewModel? _clearSelectionCommand;
+    private CommandViewModel? _applyFilterCommand;
+    private CommandViewModel? _clearFilterCommand;
 
     public CollectionFieldViewModel(
         object? parent = null,
@@ -238,6 +245,124 @@ public partial class CollectionFieldViewModel<T> : ObservableObject, ICollection
         get => _allowInlineEdit && !ReadOnly;
         set => SetProperty(ref _allowInlineEdit, value);
     }
+
+    #endregion
+
+    #region Filter
+
+    /// <summary>
+    /// Texte de la requête de filtrage (syntaxe JQL-like).
+    /// </summary>
+    public string? FilterText
+    {
+        get => _filterText;
+        set => SetProperty(ref _filterText, value);
+    }
+
+    /// <summary>
+    /// Message d'erreur de parsing/validation du filtre.
+    /// </summary>
+    public string? FilterError
+    {
+        get => _filterError;
+        private set => SetProperty(ref _filterError, value);
+    }
+
+    /// <summary>
+    /// True si un filtre est actuellement appliqué sans erreur.
+    /// </summary>
+    public bool HasActiveFilter
+    {
+        get => _hasActiveFilter;
+        private set => SetProperty(ref _hasActiveFilter, value);
+    }
+
+    /// <summary>
+    /// Délégué fourni par le consommateur pour exécuter la requête filtrée.
+    /// Reçoit le texte du filtre et retourne les résultats filtrés.
+    /// </summary>
+    public Func<string, IEnumerable<T>>? FilteredQuery { get; set; }
+
+    /// <summary>
+    /// Applique le filtre courant. Si FilteredQuery est null ou FilterText est vide,
+    /// recharge via _query normal.
+    /// </summary>
+    public void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(FilterText) || FilteredQuery == null)
+        {
+            ClearFilter();
+            return;
+        }
+
+        try
+        {
+            var results = FilteredQuery(FilterText);
+
+            if (_collection != null)
+            {
+                _collection.CollectionChanged -= OnCollectionChanged;
+            }
+
+            _collection = new System.Collections.ObjectModel.ObservableCollection<T>(results);
+            _collection.CollectionChanged += OnCollectionChanged;
+            _isInitialized = true;
+
+            FilterError = null;
+            HasActiveFilter = true;
+
+            SelectedItems.Clear();
+            OnPropertyChanged(nameof(SelectedItems));
+            OnPropertyChanged(nameof(SelectedCount));
+            OnPropertyChanged(nameof(Collection));
+            OnPropertyChanged(nameof(Count));
+            OnPropertyChanged(nameof(ColumnFields));
+
+            if (SelectedItem != null && !Collection.Contains(SelectedItem))
+            {
+                SelectedItem = Collection.FirstOrDefault();
+            }
+        }
+        catch (Exception ex)
+        {
+            FilterError = ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Efface le filtre et recharge les données via la requête normale.
+    /// </summary>
+    public void ClearFilter()
+    {
+        FilterText = null;
+        FilterError = null;
+        HasActiveFilter = false;
+        Refresh();
+    }
+
+    /// <summary>
+    /// Commande pour appliquer le filtre.
+    /// </summary>
+    public CommandViewModel ApplyFilterCommand => _applyFilterCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Filter",
+        hint: "Apply the filter query",
+        execute: ApplyFilter,
+        canExecute: () => FilteredQuery != null && !string.IsNullOrWhiteSpace(FilterText),
+        style: CommandStyle.Info
+    );
+
+    /// <summary>
+    /// Commande pour effacer le filtre.
+    /// </summary>
+    public CommandViewModel ClearFilterCommand => _clearFilterCommand ??= new CommandViewModel(
+        parent: this,
+        text: "Clear",
+        hint: "Clear the filter and show all items",
+        execute: ClearFilter,
+        canExecute: () => HasActiveFilter,
+        style: CommandStyle.Default
+    );
 
     #endregion
 
