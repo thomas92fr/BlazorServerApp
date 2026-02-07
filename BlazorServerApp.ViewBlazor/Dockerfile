@@ -25,5 +25,18 @@ RUN dotnet publish "./BlazorServerApp.ViewBlazor.csproj" -c $BUILD_CONFIGURATION
 # Cette phase est utilisée en production ou lors de l'exécution à partir de VS en mode normal (par défaut quand la configuration de débogage n'est pas utilisée)
 FROM base AS final
 WORKDIR /app
+
+# Répertoire pour la base de données SQLite (volume persistant)
+RUN mkdir -p /data
+VOLUME /data
+
+# Configuration par défaut (surchargeable via docker run -e ou docker-compose)
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:80
+ENV ConnectionStrings__DefaultConnection="Data Source=/data/BlazorApp.db"
+ENV OpenIdConnect__Authority="https://accounts.google.com"
+ENV OpenIdConnect__ClientId=""
+ENV OpenIdConnect__ClientSecret=""
+
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "BlazorServerApp.ViewBlazor.dll"]
