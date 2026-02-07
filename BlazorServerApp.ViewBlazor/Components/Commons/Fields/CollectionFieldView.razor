@@ -44,7 +44,7 @@
                      AlignItems="AlignItems.Center">
             <RadzenTextBox Value="@filterText"
                            @oninput="@(args => filterText = args.Value?.ToString())"
-                           Placeholder="Filter (ex: name contains &quot;John&quot; AND age > 30)"
+                           Placeholder="Filter (ex: name contains ''John'' AND age > 30)"
                            Style="flex: 1"
                            @onkeydown="OnFilterKeyDown" />
             <RadzenButton Text="Filter" Icon="filter_alt"
