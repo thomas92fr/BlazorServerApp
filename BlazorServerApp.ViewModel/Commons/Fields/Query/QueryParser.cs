@@ -86,6 +86,14 @@ public class QueryParser
         var fieldToken = Expect(TokenType.Identifier, "Expected field name");
         var fieldName = (string)fieldToken.Value!;
 
+        // Support dotted paths: Mentor.Age, Mentor.Mentor.Name
+        while (Current().Type == TokenType.Dot)
+        {
+            Advance(); // consume the dot
+            var nextToken = Expect(TokenType.Identifier, "Expected property name after '.'");
+            fieldName += "." + (string)nextToken.Value!;
+        }
+
         var opToken = Current();
 
         // Handle "is null" / "is not null"

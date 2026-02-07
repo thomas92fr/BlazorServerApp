@@ -53,23 +53,8 @@ public static class ExpressionBuilder
         ParameterExpression parameter,
         Dictionary<string, string>? fieldAliases)
     {
-        var propertyName = ResolveFieldName<TEntity>(node.FieldName, fieldAliases);
-        var property = typeof(TEntity).GetProperty(propertyName,
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-        if (property == null)
-        {
-            var available = string.Join(", ", typeof(TEntity)
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanRead)
-                .Select(p => p.Name));
-            throw new QueryParseException(
-                $"Field '{node.FieldName}' not found on entity '{typeof(TEntity).Name}'. Available: {available}.",
-                0);
-        }
-
-        var memberAccess = Expression.Property(parameter, property);
-        var propertyType = property.PropertyType;
+        var resolvedPath = ResolveFieldName<TEntity>(node.FieldName, fieldAliases);
+        var (memberAccess, propertyType) = ResolvePropertyPath<TEntity>(resolvedPath, parameter, node.FieldName);
         var underlyingType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
 
         // Handle IsNull / IsNotNull
@@ -114,7 +99,46 @@ public static class ExpressionBuilder
         };
     }
 
-    private static Expression BuildNullCheck(MemberExpression memberAccess, Type propertyType, bool isNull)
+    /// <summary>
+    /// Résout un chemin pointé (ex: "Mentor.Age") en expression chaînée (e.Mentor.Age).
+    /// Supporte les chemins simples ("Age") et multi-niveaux ("Mentor.Mentor.Name").
+    /// </summary>
+    private static (Expression MemberAccess, Type PropertyType) ResolvePropertyPath<TEntity>(
+        string path,
+        ParameterExpression parameter,
+        string originalFieldName)
+    {
+        var segments = path.Split('.');
+        Expression currentExpression = parameter;
+        var currentType = typeof(TEntity);
+
+        foreach (var segment in segments)
+        {
+            var property = currentType.GetProperty(segment,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+            if (property == null)
+            {
+                var available = string.Join(", ", currentType
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanRead)
+                    .Select(p => p.Name));
+                var context = segments.Length > 1
+                    ? $" (in path '{originalFieldName}')"
+                    : "";
+                throw new QueryParseException(
+                    $"Field '{segment}' not found on entity '{currentType.Name}'{context}. Available: {available}.",
+                    0);
+            }
+
+            currentExpression = Expression.Property(currentExpression, property);
+            currentType = property.PropertyType;
+        }
+
+        return (currentExpression, currentType);
+    }
+
+    private static Expression BuildNullCheck(Expression memberAccess, Type propertyType, bool isNull)
     {
         if (propertyType.IsValueType && Nullable.GetUnderlyingType(propertyType) == null)
         {
@@ -128,7 +152,7 @@ public static class ExpressionBuilder
             : Expression.NotEqual(memberAccess, nullConstant);
     }
 
-    private static Expression BuildStringComparison(ComparisonNode node, MemberExpression memberAccess)
+    private static Expression BuildStringComparison(ComparisonNode node, Expression memberAccess)
     {
         if (node.Value is not string strValue)
         {
@@ -174,7 +198,7 @@ public static class ExpressionBuilder
 
     private static Expression BuildInExpression(
         ComparisonNode node,
-        MemberExpression memberAccess,
+        Expression memberAccess,
         Type propertyType,
         Type underlyingType)
     {

@@ -39,6 +39,7 @@ public enum TokenType
     LeftParen,          // (
     RightParen,         // )
     Comma,              // ,
+    Dot,                // .
 
     // Fin de flux
     Eof

@@ -47,6 +47,11 @@ public class QueryLexer
                     _position++;
                     break;
 
+                case '.':
+                    _tokens.Add(new Token(TokenType.Dot, ".", null, _position));
+                    _position++;
+                    break;
+
                 case '=':
                     _tokens.Add(new Token(TokenType.Equal, "=", null, _position));
                     _position++;
