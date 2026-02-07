@@ -11,9 +11,22 @@
 
 <RadzenLayout>
     <RadzenHeader>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-            <RadzenLabel Text="ViewBlazor" />
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Gap="0" Style="width: 100%;">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+                <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+                <RadzenLabel Text="ViewBlazor" />
+            </RadzenStack>
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-mr-3">
+                        <RadzenIcon Icon="person" />
+                        <RadzenLabel Text="@context.User.Identity?.Name" />
+                        <a href="/Logout">
+                            <RadzenButton Text="Logout" Icon="logout" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
+                        </a>
+                    </RadzenStack>
+                </Authorized>
+            </AuthorizeView>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar FullHeight="true" @bind-Expanded="@sidebarExpanded">

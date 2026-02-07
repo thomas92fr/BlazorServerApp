@@ -3,6 +3,7 @@ using Radzen;
 using BlazorServerApp.ViewModel;
 using BlazorServerApp.ViewMCP;
 using BlazorServerApp.ViewBlazor.Endpoints;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,13 @@ builder.Services.AddViewModels(builder.Configuration.GetConnectionString("Defaul
 // Add MCP server
 builder.Services.AddViewMcp();
 
+// Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+    });
+
 // Logging
 builder.Services.AddLogging();
 
@@ -38,8 +46,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
 //app.MapUploadEndpoints(); //Endpoints for file uploads
 app.MapViewMcp();
+app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

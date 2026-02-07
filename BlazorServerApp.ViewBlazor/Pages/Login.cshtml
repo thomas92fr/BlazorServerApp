@@ -1,0 +1,41 @@
+@page
+@model BlazorServerApp.ViewBlazor.Pages.LoginModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = "_Layout";
+}
+
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+    <div class="rz-card rz-variant-outlined rz-p-6" style="width: 100%; max-width: 400px;">
+        <h3 class="rz-text-align-center rz-mb-6">Login</h3>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="rz-message rz-message-inline rz-message-error rz-mb-4">
+                <span class="rz-message-text">@Model.ErrorMessage</span>
+            </div>
+        }
+
+        <form method="post">
+            <div class="rz-form-field rz-variant-outlined rz-mb-4" style="width: 100%;">
+                <label class="rz-form-field-label" for="UserName">User Name</label>
+                <div class="rz-form-field-content">
+                    <input type="text" id="UserName" name="UserName" value="@Model.UserName"
+                           class="rz-textbox" required autofocus style="width: 100%;" />
+                </div>
+            </div>
+            <div class="rz-form-field rz-variant-outlined rz-mb-6" style="width: 100%;">
+                <label class="rz-form-field-label" for="Password">Password</label>
+                <div class="rz-form-field-content">
+                    <input type="password" id="Password" name="Password"
+                           class="rz-textbox" required style="width: 100%;" />
+                </div>
+            </div>
+            <button type="submit"
+                    class="rz-button rz-button-md rz-variant-filled rz-primary"
+                    style="width: 100%;">
+                <span class="rz-button-text">Sign In</span>
+            </button>
+        </form>
+    </div>
+</div>
