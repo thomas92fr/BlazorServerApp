@@ -20,6 +20,8 @@ public class Person : IEntity
 
     public string? Cv { get; set; }
 
+    public bool Deleted { get; set; }
+
     public int? MentorId { get; set; }
 
     private Person? _mentor;

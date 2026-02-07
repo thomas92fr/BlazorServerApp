@@ -133,7 +133,8 @@ public class UnitOfWork : IUnitOfWork
         _semaphore.Wait();
         try
         {
-            var entities = _context.Set<TEntity>().ToList();
+            var entities = _context.Set<TEntity>().ToList()
+                .Where(e => !e.Deleted).ToList();
             return entities.Select(e => GetViewModel<TEntity, TViewModel>(e)!).ToList();
         }
         finally
@@ -168,20 +169,32 @@ public class UnitOfWork : IUnitOfWork
     }
 
     /// <summary>
-    /// Marks an entity for deletion.
-    /// Not actually deleted until SaveChanges() is called.
+    /// Soft-deletes an entity by setting Deleted = true.
+    /// New entities (Added state) are detached entirely and never persisted.
+    /// Existing entities are marked as Modified to persist Deleted = true on SaveChanges.
     /// </summary>
     public void DeleteEntity<TEntity>(TEntity entity) where TEntity : class, IEntity
     {
         _semaphore.Wait();
         try
         {
+            entity.Deleted = true;
+
             var entry = _context.Entry(entity);
-            if (entry.State == EntityState.Detached)
+            if (entry.State == EntityState.Added)
             {
-                _context.Set<TEntity>().Attach(entity);
+                // New entity never persisted → detach completely, no INSERT
+                entry.State = EntityState.Detached;
             }
-            _context.Set<TEntity>().Remove(entity);
+            else
+            {
+                // Existing entity → mark Modified to persist Deleted = true
+                if (entry.State == EntityState.Detached)
+                {
+                    _context.Set<TEntity>().Attach(entity);
+                }
+                entry.State = EntityState.Modified;
+            }
 
             // Remove from ViewModel cache
             if (_viewModelCaches.TryGetValue(typeof(TEntity), out var cache))
@@ -195,8 +208,8 @@ public class UnitOfWork : IUnitOfWork
                 }
             }
 
-            _logger?.LogDebug("Marked {EntityType} with Id={Id} for deletion",
-                typeof(TEntity).Name, entity.Id);
+            _logger?.LogDebug("Soft-deleted {EntityType} with Id={Id} (State={State})",
+                typeof(TEntity).Name, entity.Id, entry.State);
         }
         finally
         {
@@ -269,6 +282,17 @@ public class UnitOfWork : IUnitOfWork
                     _logger?.LogWarning("SaveAll blocked: {ErrorCount} validation errors found",
                         allErrors.Count);
                     return allErrors;
+                }
+            }
+
+            // Safety net: detach new entities marked as deleted (should not be persisted)
+            foreach (var entry in _context.ChangeTracker.Entries<IEntity>().ToList())
+            {
+                if (entry.State == EntityState.Added && entry.Entity.Deleted)
+                {
+                    entry.State = EntityState.Detached;
+                    _logger?.LogDebug("Detached new entity {Type} marked as deleted before save",
+                        entry.Entity.GetType().Name);
                 }
             }
 

@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using BlazorServerApp.Model.Entities;
 
@@ -22,5 +23,17 @@ public class ApplicationDbContext : DbContext
 
         // Apply all configurations from the current assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Global query filter: exclude soft-deleted entities
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(IEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+                var property = Expression.Property(parameter, nameof(IEntity.Deleted));
+                var filter = Expression.Lambda(Expression.Not(property), parameter);
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            }
+        }
     }
 }

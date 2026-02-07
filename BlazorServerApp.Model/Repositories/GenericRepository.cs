@@ -43,11 +43,21 @@ public class GenericRepository<TEntity> : IGenericRepository<TEntity>
 
     public void Delete(TEntity entity)
     {
-        if (_context.Entry(entity).State == EntityState.Detached)
+        entity.Deleted = true;
+
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Added)
         {
-            _dbSet.Attach(entity);
+            entry.State = EntityState.Detached;
         }
-        _dbSet.Remove(entity);
+        else
+        {
+            if (entry.State == EntityState.Detached)
+            {
+                _dbSet.Attach(entity);
+            }
+            _context.Entry(entity).State = EntityState.Modified;
+        }
     }
 
     public bool Exists(int id)
