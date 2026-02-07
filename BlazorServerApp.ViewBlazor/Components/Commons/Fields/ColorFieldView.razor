@@ -1,0 +1,70 @@
+@using BlazorServerApp.ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+
+<RadzenFormField Text="@Field?.Label" Variant="Variant.Outlined" class="rz-mb-3 w-100">
+    <End>
+        <div style="display: flex; align-items: center; height: 100%;">
+            @if (!string.IsNullOrEmpty(Field?.Hint))
+            {
+                <RadzenIcon Icon="info" Style="cursor: help; font-size: 1rem; color: var(--rz-text-tertiary-color);"
+                            MouseEnter="@(args => ShowHintTooltip(args))" />
+            }
+        </div>
+    </End>
+    <ChildContent>
+        <RadzenColorPicker Value="@(Field?.Value ?? string.Empty)"
+                           ValueChanged="@OnValueChanged"
+                           Disabled="@(Field?.ReadOnly ?? false)"
+                           ShowHSV="@(Field?.ShowHSV ?? true)"
+                           ShowRGBA="@(Field?.ShowRGBA ?? true)"
+                           ShowColors="@(Field?.ShowColors ?? true)"
+                           ShowButton="@(Field?.ShowButton ?? false)" />
+    </ChildContent>
+</RadzenFormField>
+
+@if (!string.IsNullOrEmpty(Field?.Error))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Danger"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Error
+    </RadzenAlert>
+}
+
+@if (!string.IsNullOrEmpty(Field?.Warning))
+{
+    <RadzenAlert AlertStyle="AlertStyle.Warning"
+                 Shade="Shade.Lighter"
+                 Size="AlertSize.Small"
+                 AllowClose="false"
+                 class="rz-mt-1">
+        @Field.Warning
+    </RadzenAlert>
+}
+
+@code {
+    [Parameter]
+    public ColorFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private async Task OnValueChanged(string newValue)
+    {
+        if (Field != null)
+        {
+            Field.Value = newValue ?? string.Empty;
+            await ValueChanged.InvokeAsync(newValue ?? string.Empty);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

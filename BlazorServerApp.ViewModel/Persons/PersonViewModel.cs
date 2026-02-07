@@ -21,7 +21,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private IntegerFieldViewModel? _idField;
     private StringFieldViewModel? _nameField;
     private IntegerFieldViewModel? _ageField;
-    private BoolFieldViewModel? _isTeacherField;
+    private BoolSwitchFieldViewModel? _isTeacherField;
     private DateTimeFieldViewModel? _startDateTimeField;
     private DateTimeFieldViewModel? _endDateTimeField;
     private ReferenceFieldViewModel<PersonViewModel>? _mentorField;
@@ -31,6 +31,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     private IntegerSliderFieldViewModel? _satisfactionField;
     private HtmlFieldViewModel? _commentField;
     private FileFieldViewModel? _cvField;
+    private ColorFieldViewModel? _favoriteColorField;
 
 
     public PersonViewModel(
@@ -129,7 +130,7 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
     /// <summary>
     /// Boolean property (checkbox in UI).
     /// </summary>
-    public BoolFieldViewModel IsTeacher => _isTeacherField ??= new BoolFieldViewModel(
+    public BoolSwitchFieldViewModel IsTeacher => _isTeacherField ??= new BoolSwitchFieldViewModel(
         parent: this,
         getValue: () => _person.IsTeacher,
         setValue: value => _person.IsTeacher = value)
@@ -296,6 +297,22 @@ public partial class PersonViewModel : BaseViewModel, IEntityViewModel<Person>
         FormGroupOrder = 5,
         HiddenInColumn = true,
         Accept = ".pdf,.doc,.docx"
+    };
+
+    /// <summary>
+    /// Color picker field for favorite color.
+    /// </summary>
+    public ColorFieldViewModel FavoriteColor => _favoriteColorField ??= new ColorFieldViewModel(
+        parent: this,
+        getValue: () => _person.FavoriteColor,
+        setValue: value => _person.FavoriteColor = value)
+    {
+        Label = "Favorite Color",
+        Hint = "Pick a favorite color",
+        ColumnOrder = 14,
+        FormGroupHeader = "Personal Information",
+        FormGroupOrder = 2,
+        HiddenInColumn = true
     };
 
     /// <summary>

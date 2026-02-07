@@ -145,6 +145,12 @@
             builder.AddAttribute(1, "Field", htmlField);
             builder.CloseComponent();
         }
+        else if (field is ColorFieldViewModel colorField)
+        {
+            builder.OpenComponent<ColorFieldView>(0);
+            builder.AddAttribute(1, "Field", colorField);
+            builder.CloseComponent();
+        }
         else if (field is PasswordFieldViewModel passwordField)
         {
             builder.OpenComponent<PasswordFieldView>(0);
@@ -179,6 +185,12 @@
         {
             builder.OpenComponent<TimeSpanFieldView>(0);
             builder.AddAttribute(1, "Field", timeSpanField);
+            builder.CloseComponent();
+        }
+        else if (field is BoolSwitchFieldViewModel boolSwitchField)
+        {
+            builder.OpenComponent<BoolSwitchFieldView>(0);
+            builder.AddAttribute(1, "Field", boolSwitchField);
             builder.CloseComponent();
         }
         else if (field is BoolFieldViewModel boolField)

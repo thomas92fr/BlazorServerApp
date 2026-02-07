@@ -20,6 +20,8 @@ public class Person : IEntity
 
     public string? Cv { get; set; }
 
+    public string FavoriteColor { get; set; } = "rgb(68, 58, 110)";
+
     public bool Deleted { get; set; }
 
     public int? MentorId { get; set; }

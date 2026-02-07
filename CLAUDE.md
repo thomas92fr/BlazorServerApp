@@ -88,8 +88,10 @@ All entity properties are wrapped in typed FieldViewModels:
 | `IntegerSliderFieldViewModel` | Sliders (Min, Max, Step) |
 | `DecimalFieldViewModel` | Decimal numbers (Format, Step, Min, Max, +/- commands) |
 | `BoolFieldViewModel` | Checkboxes |
+| `BoolSwitchFieldViewModel` | Toggle switches |
 | `DateTimeFieldViewModel` | Date/time pickers |
 | `TimeSpanFieldViewModel` | Duration pickers (ShowDays, ShowSeconds, Inline) |
+| `ColorFieldViewModel` | Color picker (ShowHSV, ShowRGBA, ShowColors, ShowButton) |
 | `HtmlFieldViewModel` | Rich-text HTML content (Height, UploadUrl) |
 | `FileFieldViewModel` | File upload as base64 data URL (Accept filter, download) |
 | `ReferenceFieldViewModel<T>` | Entity references (dropdowns) |
@@ -587,6 +589,8 @@ builder.Services.AddRadzenComponents();
 | `IntegerSliderFieldView` | `IntegerSliderFieldViewModel` | RadzenSlider |
 | `DecimalFieldView` | `DecimalFieldViewModel` | RadzenNumeric, RadzenDropDown |
 | `BoolFieldView` | `BoolFieldViewModel` | RadzenCheckBox |
+| `BoolSwitchFieldView` | `BoolSwitchFieldViewModel` | RadzenSwitch |
+| `ColorFieldView` | `ColorFieldViewModel` | RadzenColorPicker |
 | `DateTimeFieldView` | `DateTimeFieldViewModel` | RadzenDatePicker |
 | `TimeSpanFieldView` | `TimeSpanFieldViewModel` | RadzenTimeSpanPicker |
 | `ReferenceFieldView` | `ReferenceFieldViewModel<T>` | RadzenDropDown |

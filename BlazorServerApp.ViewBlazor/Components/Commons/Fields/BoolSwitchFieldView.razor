@@ -1,0 +1,67 @@
+@using BlazorServerApp.ViewModel.Commons.Fields
+@inject TooltipService TooltipService
+
+<div class="rz-mb-3">
+    <RadzenSwitch Value="@(Field?.Value ?? false)"
+                  ValueChanged="@OnValueChanged"
+                  Disabled="@(Field?.ReadOnly ?? false)"
+                  Name="@_uniqueId" />
+    @if (!string.IsNullOrEmpty(Field?.Label))
+    {
+        <RadzenLabel Text="@Field.Label" Component="@_uniqueId" class="rz-ms-2" />
+    }
+    @if (!string.IsNullOrEmpty(Field?.Hint))
+    {
+        <RadzenIcon Icon="info" class="rz-ms-1" Style="cursor: help; font-size: 1rem; color: var(--rz-text-tertiary-color); vertical-align: middle;"
+                    MouseEnter="@(args => ShowHintTooltip(args))" />
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Error))
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger"
+                     Shade="Shade.Lighter"
+                     Size="AlertSize.Small"
+                     AllowClose="false"
+                     class="rz-mt-1">
+            @Field.Error
+        </RadzenAlert>
+    }
+
+    @if (!string.IsNullOrEmpty(Field?.Warning))
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Warning"
+                     Shade="Shade.Lighter"
+                     Size="AlertSize.Small"
+                     AllowClose="false"
+                     class="rz-mt-1">
+            @Field.Warning
+        </RadzenAlert>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public BoolSwitchFieldViewModel? Field { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ValueChanged { get; set; }
+
+    private string _uniqueId = Guid.NewGuid().ToString();
+
+    private async Task OnValueChanged(bool newValue)
+    {
+        if (Field != null)
+        {
+            Field.Value = newValue;
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+
+    private void ShowHintTooltip(ElementReference elementReference)
+    {
+        if (!string.IsNullOrEmpty(Field?.Hint))
+        {
+            TooltipService.Open(elementReference, Field.Hint);
+        }
+    }
+}

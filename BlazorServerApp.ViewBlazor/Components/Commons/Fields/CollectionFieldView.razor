@@ -510,7 +510,19 @@
     {
         var fieldVm = prop.GetValue(item);
 
-        if (fieldVm is StringFieldViewModel strField && !strField.ReadOnly && strField.HasSetValueFunction)
+        if (fieldVm is ColorFieldViewModel colorField && !colorField.ReadOnly && colorField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenColorPicker>(0);
+            __builder.AddAttribute(1, "Value", colorField.Value ?? string.Empty);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<string>(this, v => { colorField.Value = v ?? string.Empty; }));
+            __builder.AddAttribute(3, "ShowHSV", colorField.ShowHSV);
+            __builder.AddAttribute(4, "ShowRGBA", colorField.ShowRGBA);
+            __builder.AddAttribute(5, "ShowColors", colorField.ShowColors);
+            __builder.AddAttribute(6, "ShowButton", colorField.ShowButton);
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is StringFieldViewModel strField && !strField.ReadOnly && strField.HasSetValueFunction)
         {
             if (strField.List != null && strField.ValueMustBeInTheList)
             {
@@ -580,6 +592,14 @@
             __builder.AddAttribute(2, "ValueChanged",
                 EventCallback.Factory.Create<int>(this, v => { intField.Value = v; }));
             __builder.AddAttribute(3, "Style", "width:100%");
+            __builder.CloseComponent();
+        }
+        else if (fieldVm is BoolSwitchFieldViewModel switchField && !switchField.ReadOnly && switchField.HasSetValueFunction)
+        {
+            __builder.OpenComponent<RadzenSwitch>(0);
+            __builder.AddAttribute(1, "Value", switchField.Value);
+            __builder.AddAttribute(2, "ValueChanged",
+                EventCallback.Factory.Create<bool>(this, v => { switchField.Value = v; }));
             __builder.CloseComponent();
         }
         else if (fieldVm is BoolFieldViewModel boolField && !boolField.ReadOnly && boolField.HasSetValueFunction)
